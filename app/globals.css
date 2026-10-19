@@ -1,26 +1,132 @@
 @import "tailwindcss";
 
+/* Тёмная тема включается атрибутом data-theme="dark" на <html>, как в старом сайте */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+  Палитра — точные цвета из старого css/style.css.
+  --muted и --gold-text — производные нейтрали для контраста текста ≥ 4.5:1.
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --primary: #406967;
+  --primary-light: #5a8c89;
+  --primary-dark: #2d4d4b;
+  --gold: #d4af37;
+  --success: #4caf50;
+
+  --text-light: #333333;
+  --text-dark: #f0f0f0;
+  --bg-light: #f9f5f0;
+  --bg-dark: #1a2a28;
+  --card-light: #ffffff;
+  --card-dark: #2a3d3b;
+
+  /* Активная тема (светлая по умолчанию) */
+  --text: var(--text-light);
+  --bg: var(--bg-light);
+  --card: var(--card-light);
+  --muted: #545454;
+  --heading: var(--primary);
+  --proverb: var(--primary-dark);
+  --line: #e4dccf;
+  --track: #e0e0e0;
+  --ornament: var(--primary);
+  --ornament-bg: rgb(64 105 103 / 0.05);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --text: var(--text-dark);
+  --bg: var(--bg-dark);
+  --card: var(--card-dark);
+  --muted: #c3cecc;
+  --heading: var(--gold);
+  --proverb: #f3e3ad;
+  --line: #3b5250;
+  --track: #3b5250;
+  --ornament: var(--gold);
+  --ornament-bg: rgb(212 175 55 / 0.05);
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
+  --color-gold: var(--gold);
+  --color-success: var(--success);
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-heading: var(--heading);
+  --color-proverb: var(--proverb);
+  --color-line: var(--line);
+  --color-track: var(--track);
+  --color-ornament: var(--ornament);
+  --font-sans: var(--font-noto-sans), system-ui, sans-serif;
+  --font-serif: var(--font-noto-serif), Georgia, serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Лёгкий фоновый узор: ромб с қошқар мүйіз внутри, цвет берётся из палитры через mask */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--ornament-bg);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M48 8 88 48 48 88 8 48Z'/%3E%3Cpath d='M48 62V44C48 34 38 30 33 36 29 41 34 46 38 42M48 44C48 34 58 30 63 36 67 41 62 46 58 42'/%3E%3C/g%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M48 8 88 48 48 88 8 48Z'/%3E%3Cpath d='M48 62V44C48 34 38 30 33 36 29 41 34 46 38 42M48 44C48 34 58 30 63 36 67 41 62 46 58 42'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-size: 96px 96px;
+  mask-size: 96px 96px;
+}
+
+/*
+  Полоса-разделитель: чередующиеся қошқар мүйіз (рога вверх и вниз) и ромбы.
+  Цвет задаётся background-color элемента (bg-gold, bg-ornament).
+*/
+.ornament-band {
+  height: 20px;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='20' viewBox='0 0 56 20'%3E%3Cg fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M0 1.5H56M0 18.5H56'/%3E%3Cpath d='M28 15V9C28 5 23 4 21 7C19.5 9.5 22 11.5 23.5 9.5M28 9C28 5 33 4 35 7C36.5 9.5 34 11.5 32.5 9.5'/%3E%3Cpath d='M0 5V11C0 15 5 16 7 13C8.5 10.5 6 8.5 4.5 10.5M56 5V11C56 15 51 16 49 13C47.5 10.5 50 8.5 51.5 10.5'/%3E%3Cpath d='M14 7L17 10 14 13 11 10ZM42 7L45 10 42 13 39 10Z'/%3E%3C/g%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='20' viewBox='0 0 56 20'%3E%3Cg fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M0 1.5H56M0 18.5H56'/%3E%3Cpath d='M28 15V9C28 5 23 4 21 7C19.5 9.5 22 11.5 23.5 9.5M28 9C28 5 33 4 35 7C36.5 9.5 34 11.5 32.5 9.5'/%3E%3Cpath d='M0 5V11C0 15 5 16 7 13C8.5 10.5 6 8.5 4.5 10.5M56 5V11C56 15 51 16 49 13C47.5 10.5 50 8.5 51.5 10.5'/%3E%3Cpath d='M14 7L17 10 14 13 11 10ZM42 7L45 10 42 13 39 10Z'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-size: 56px 20px;
+  mask-size: 56px 20px;
+  -webkit-mask-repeat: repeat-x;
+  mask-repeat: repeat-x;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-5 py-2.5 font-medium text-white transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply inline-flex min-h-11 items-center justify-center rounded-lg border border-primary px-5 py-2.5 font-medium text-primary transition hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-50 dark:border-gold dark:text-gold dark:hover:bg-gold dark:hover:text-bg;
+  }
+  .field {
+    @apply w-full rounded-lg border border-line bg-card px-4 py-2.5 text-text placeholder:text-muted focus:border-primary focus:outline-none;
+  }
+}
+
+:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
 }

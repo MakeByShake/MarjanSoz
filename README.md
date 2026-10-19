@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MarjanSóz
 
-## Getting Started
+Платформа для изучения казахских мақал-мәтелдер. Next.js (App Router) + TypeScript + Tailwind CSS, только фронтенд. Данные пользователя хранятся в `localStorage` (ключи совместимы со старым сайтом).
 
-First, run the development server:
+## Запуск
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000
+npm run build    # проверка production-сборки
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Структура
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+app/
+  layout.tsx              шрифты Noto, тема без вспышки
+  globals.css             дизайн-токены (палитра старого сайта), орнаменты
+  login/                  вход и регистрация
+  (app)/                  страницы только для вошедших (AuthGuard)
+    dashboard/ lessons/ lessons/[topic]/ proverbs/ balama/ rating/ profile/
+  data/proverbs.json/     отдаёт data/proverbs.json как статический файл
+  api/                    пусто: сюда добавятся /api/explain, /api/search, /api/teacher
+components/               Header, Footer, Ornament, ThemeToggle, ConfirmDialog, ui
+lib/                      types, proverbs (загрузка/поиск), user (localStorage), quiz, topics
+data/proverbs.json        мақалы: { id, text, translation_ru, topic, explanation }
+data/balama.json          балама сөздер
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Как заменить мақалы
 
-## Learn More
+Замените `data/proverbs.json` своим файлом той же структуры и пересоберите проект. Количество нигде не прописано: прогресс, темы, уроки и тесты строятся из данных. Чтобы у новой темы были красивое название и иконка, добавьте её ключ в `lib/topics.ts`; без этого тема всё равно появится, с названием из поля `topic`.
 
-To learn more about Next.js, take a look at the following resources:
+## Деплой на Vercel
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Создайте пустой репозиторий на GitHub, затем в папке проекта выполните:
+   ```bash
+   git add -A && git commit -m "MarjanSóz на Next.js"
+   git remote add origin https://github.com/<логин>/marjansoz.git
+   git push -u origin main
+   ```
+2. На vercel.com войдите через GitHub, нажмите **Add New → Project** и выберите репозиторий.
+3. Framework Preset определится сам (Next.js). Ничего не меняйте и нажмите **Deploy**.
+4. Через 1–2 минуты сайт будет доступен по адресу `https://<имя>.vercel.app`. Каждый `git push` будет обновлять его автоматически.
+5. Когда подключите ИИ, добавьте `ANTHROPIC_API_KEY` в **Settings → Environment Variables** и передеплойте.
