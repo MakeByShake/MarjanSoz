@@ -1,29 +1,40 @@
 "use client";
 
-import { levelFor, useCurrentUser, useUsers } from "@/lib/user";
-
-// Демо-участники, как в старом сайте, чтобы рейтинг не был пустым
-const DEMO = [
-  { id: -1, username: "Аслан", points: 1250 },
-  { id: -2, username: "Айгүл", points: 980 },
-  { id: -3, username: "Бауыржан", points: 750 },
-  { id: -4, username: "Құралай", points: 450 },
-];
+import { Loading } from "@/components/ui";
+import { levelFor, useCurrentUser, useRating } from "@/lib/user";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
 export function RatingList() {
   const current = useCurrentUser();
-  const users = useUsers();
+  const { rows, error } = useRating();
 
-  const rows = [...DEMO, ...users.map((u) => ({ id: u.id, username: u.username, points: u.points ?? 0 }))].sort(
-    (a, b) => b.points - a.points,
-  );
+  if (error) {
+    return (
+      <p role="alert" className="py-16 text-center text-muted">
+        Рейтингті жүктеу мүмкін болмады. Бетті жаңартып көріңіз.
+      </p>
+    );
+  }
+  if (!rows) return <Loading />;
+  if (rows.length === 0) {
+    return (
+      <div className="py-16 text-center">
+        <div aria-hidden="true" className="text-5xl">
+          🏆
+        </div>
+        <h2 className="mt-3 font-serif text-xl font-bold text-heading">Әлі ешкім жоқ</h2>
+        <p className="text-muted">Бірінші болыңыз!</p>
+      </div>
+    );
+  }
 
   return (
     <ol className="mx-auto max-w-3xl space-y-3">
       {rows.map((u, i) => {
         const isMe = u.id === current?.id;
+        // Свои очки берём из живого профиля, чтобы они сразу обновлялись после урока
+        const points = isMe && current ? current.points : u.points;
         const top = i < 3;
         return (
           <li
@@ -41,9 +52,9 @@ export function RatingList() {
                 {u.username}
                 {isMe && <span className="ml-2 text-sm font-normal text-muted">(сіз)</span>}
               </span>
-              <span className="block text-sm text-muted">{levelFor(u.points).name}</span>
+              <span className="block text-sm text-muted">{levelFor(points).name}</span>
             </span>
-            <span className="whitespace-nowrap font-bold text-primary dark:text-gold">{u.points} ұпай</span>
+            <span className="whitespace-nowrap font-bold text-primary dark:text-gold">{points} ұпай</span>
           </li>
         );
       })}

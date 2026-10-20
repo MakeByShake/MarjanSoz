@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { logout } from "@/lib/user";
+import { logout, useCurrentUser } from "@/lib/user";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { OrnamentBand } from "./Ornament";
 import { ThemeToggle } from "./ThemeToggle";
@@ -17,6 +17,8 @@ const LINKS = [
 ];
 
 export function Header() {
+  const user = useCurrentUser();
+  const links = user?.isAdmin ? [...LINKS, { href: "/admin", label: "⚙️ Админ" }] : LINKS;
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -50,7 +52,7 @@ export function Header() {
         </Link>
 
         <nav aria-label="Негізгі мәзір" className="hidden items-center gap-1 lg:flex">
-          {LINKS.map((l) => (
+          {links.map((l) => (
             <Link key={l.href} href={l.href} className={linkClass(l.href)} aria-current={isActive(l.href) ? "page" : undefined}>
               {l.label}
             </Link>
@@ -91,7 +93,7 @@ export function Header() {
       {menuOpen && (
         <nav id="mobile-nav" aria-label="Мобильді мәзір" className="border-t border-white/20 bg-primary px-4 pb-4 pt-2 lg:hidden">
           <ul className="flex flex-col gap-1">
-            {[...LINKS, { href: "/profile", label: "👤 Профиль" }].map((l) => (
+            {[...links, { href: "/profile", label: "👤 Профиль" }].map((l) => (
               <li key={l.href}>
                 <Link href={l.href} className={linkClass(l.href)} aria-current={isActive(l.href) ? "page" : undefined}>
                   {l.label}
@@ -118,11 +120,26 @@ export function Header() {
         title="Шынымен аккаунттан шығасыз ба?"
         confirmLabel="Шығу"
         onClose={() => setConfirmOpen(false)}
-        onConfirm={() => {
-          logout();
+        onConfirm={async () => {
+          await logout();
           router.replace("/login");
         }}
       />
+    </header>
+  );
+}
+
+/** Пока на динамических страницах не известен адрес: та же шапка без меню. */
+export function HeaderFallback() {
+  return (
+    <header className="sticky top-0 z-40 bg-primary text-white shadow-md">
+      <div className="mx-auto flex h-16 max-w-6xl items-center px-4 sm:px-6">
+        <span className="flex items-center gap-2 font-serif text-2xl font-bold">
+          <span aria-hidden="true" className="text-gold">❖</span>
+          MarjanSóz
+        </span>
+      </div>
+      <OrnamentBand className="bg-gold" />
     </header>
   );
 }

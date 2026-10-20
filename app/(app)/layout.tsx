@@ -1,6 +1,7 @@
 import { AuthGuard } from "@/components/AuthGuard";
 import { Footer } from "@/components/Footer";
-import { Header } from "@/components/Header";
+import { Header, HeaderFallback } from "@/components/Header";
+import { Suspense } from "react";
 
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
@@ -11,7 +12,9 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
       >
         Негізгі мазмұнға өту
       </a>
-      <Header />
+      <Suspense fallback={<HeaderFallback />}>
+        <Header />
+      </Suspense>
       <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
         <AuthGuard>{children}</AuthGuard>
       </main>

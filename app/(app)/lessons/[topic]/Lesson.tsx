@@ -5,9 +5,8 @@ import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { OrnateCard } from "@/components/Ornament";
 import { LoadError, Loading, PageHeader, ProgressBar } from "@/components/ui";
-import { groupByTopic, useProverbs } from "@/lib/proverbs";
+import { groupByTopic, topicMeta, useLibrary } from "@/lib/proverbs";
 import { type Answer, buildTest, isCorrect, PASS_PERCENT, type Question } from "@/lib/quiz";
-import { getTopicMeta } from "@/lib/topics";
 import type { Proverb } from "@/lib/types";
 import { completeProverbs, POINTS_PER_PROVERB, resetTopic, useCurrentUser } from "@/lib/user";
 
@@ -23,12 +22,14 @@ type Phase =
 
 export function Lesson({ topic }: { topic: string }) {
   const user = useCurrentUser();
-  const { proverbs, loading, error } = useProverbs();
+  const { proverbs, topics, loading, error } = useLibrary();
   const [phase, setPhase] = useState<Phase>({ name: "study" });
   const [confirmReset, setConfirmReset] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
-  const meta = getTopicMeta(topic);
-  const groups = useMemo(() => groupByTopic(proverbs), [proverbs]);
+  const meta = topicMeta(topics, topic);
+  const groups = useMemo(() => groupByTopic(proverbs, topics), [proverbs, topics]);
   const topicProverbs = groups.get(topic) ?? [];
   const topicIds = topicProverbs.map((p) => p.id);
   const topicOrder = [...groups.keys()];
@@ -78,14 +79,22 @@ export function Lesson({ topic }: { topic: string }) {
     const setAnswer = (a: Answer) =>
       setPhase({ ...phase, answers: phase.answers.map((old, i) => (i === phase.index ? a : old)) });
 
-    const finish = () => {
+    const finish = async () => {
       const correct = phase.questions.filter((qq, i) => isCorrect(qq, phase.answers[i])).length;
       const total = phase.questions.length;
       const percent = Math.round((correct / total) * 100);
       let earned = 0;
       if (percent >= PASS_PERCENT) {
-        const before = user.points;
-        earned = completeProverbs(user, phase.lesson.map((p) => p.id), topic, topicIds).points - before;
+        setSaving(true);
+        try {
+          earned = await completeProverbs(user, phase.lesson.map((p) => p.id), topic, topicIds);
+          setSaveError(false);
+        } catch {
+          setSaveError(true);
+          return;
+        } finally {
+          setSaving(false);
+        }
       }
       const mistakes = phase.questions.filter((qq, i) => !isCorrect(qq, phase.answers[i]));
       setPhase({ name: "result", lesson: phase.lesson, result: { correct, total, percent, earned, mistakes } });
@@ -111,11 +120,17 @@ export function Lesson({ topic }: { topic: string }) {
             <button
               type="button"
               className="btn-primary"
+              disabled={saving}
               onClick={() => (isLast ? finish() : setPhase({ ...phase, index: phase.index + 1 }))}
             >
-              {isLast ? "Тестті аяқтау" : "Келесі →"}
+              {saving ? "Сақталуда..." : isLast ? "Тестті аяқтау" : "Келесі →"}
             </button>
           </div>
+          {saveError && (
+            <p role="alert" className="mt-4 text-center text-sm text-red-800 dark:text-red-200">
+              Нәтижені сақтау мүмкін болмады. Интернетті тексеріп, қайта басыңыз.
+            </p>
+          )}
         </OrnateCard>
       </>
     );

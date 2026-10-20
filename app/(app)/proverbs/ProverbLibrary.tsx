@@ -2,15 +2,14 @@
 
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { LoadError, Loading } from "@/components/ui";
-import { getTopicMeta } from "@/lib/topics";
-import { groupByTopic, normalize, useProverbs } from "@/lib/proverbs";
+import { normalize, topicMeta, useLibrary } from "@/lib/proverbs";
 import { useCurrentUser } from "@/lib/user";
 
 const PAGE_SIZE = 24;
 
 export function ProverbLibrary() {
   const user = useCurrentUser();
-  const { proverbs, loading, error } = useProverbs();
+  const { proverbs, topics, loading, error } = useLibrary();
   const [query, setQuery] = useState("");
   const [topic, setTopic] = useState("all");
   const [limit, setLimit] = useState(PAGE_SIZE);
@@ -19,7 +18,6 @@ export function ProverbLibrary() {
   // Поиск не блокирует ввод даже на тысячах мақалов
   const deferredQuery = useDeferredValue(query);
 
-  const topics = useMemo(() => [...groupByTopic(proverbs).keys()], [proverbs]);
   const learned = useMemo(() => new Set(user?.completedProverbs), [user]);
 
   const filtered = useMemo(() => {
@@ -77,8 +75,8 @@ export function ProverbLibrary() {
           >
             <option value="all">Барлық тақырыптар</option>
             {topics.map((t) => (
-              <option key={t} value={t}>
-                {getTopicMeta(t).title}
+              <option key={t.id} value={t.id}>
+                {t.title}
               </option>
             ))}
           </select>
@@ -109,7 +107,7 @@ export function ProverbLibrary() {
                 )}
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm">
                   <span className="rounded-full bg-primary/10 px-3 py-1 font-medium text-primary-dark dark:bg-gold/15 dark:text-gold">
-                    {getTopicMeta(p.topic).title}
+                    {topicMeta(topics, p.topic).title}
                   </span>
                   <span className={isLearned ? "font-medium text-primary dark:text-gold" : "text-muted"}>
                     {isLearned ? "✅ Үйрендім" : "📚 Үйрену керек"}

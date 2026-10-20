@@ -10,25 +10,28 @@ export function AuthForms() {
   const user = useCurrentUser();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   // Уже вошёл — сразу на главную (как checkExistingAuth в старом сайте)
   useEffect(() => {
     if (user) router.replace("/dashboard");
   }, [user, router]);
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const get = (k: string) => String(f.get(k) ?? "").trim();
+    setBusy(true);
     const result =
       mode === "login"
-        ? login(get("username"), String(f.get("password") ?? ""))
-        : register({
+        ? await login(get("email"), String(f.get("password") ?? ""))
+        : await register({
             username: get("username"),
             email: get("email"),
             password: String(f.get("password") ?? ""),
             confirmPassword: String(f.get("confirmPassword") ?? ""),
           });
+    setBusy(false);
     if (result.ok) router.replace("/dashboard");
     else setError(result.error);
   }
@@ -51,8 +54,8 @@ export function AuthForms() {
       <form key={mode} onSubmit={onSubmit} noValidate className="space-y-4">
         <h1 className="text-center font-serif text-2xl font-bold text-heading">{mode === "login" ? "Кіру" : "Тіркелу"}</h1>
 
-        <Field name="username" label="Пайдаланушы аты" autoComplete="username" />
-        {mode === "register" && <Field name="email" label="Электронды пошта" type="email" autoComplete="email" />}
+        {mode === "register" && <Field name="username" label="Пайдаланушы аты" autoComplete="nickname" />}
+        <Field name="email" label="Электронды пошта" type="email" autoComplete="email" />
         <Field
           name="password"
           label="Құпия сөз"
@@ -69,8 +72,8 @@ export function AuthForms() {
           </p>
         )}
 
-        <button type="submit" className="btn-primary w-full">
-          {mode === "login" ? "Кіру" : "Тіркелу"}
+        <button type="submit" className="btn-primary w-full" disabled={busy}>
+          {busy ? "Күте тұрыңыз..." : mode === "login" ? "Кіру" : "Тіркелу"}
         </button>
 
         <p className="text-center text-sm">

@@ -2,20 +2,20 @@
 
 import { OrnateCard } from "@/components/Ornament";
 import { Loading, ProgressBar } from "@/components/ui";
-import { groupByTopic, useProverbs } from "@/lib/proverbs";
+import { useLibrary } from "@/lib/proverbs";
 import { levelFor, useCurrentUser } from "@/lib/user";
 
 export function Profile() {
   const user = useCurrentUser();
-  const { proverbs } = useProverbs();
+  const { proverbs, topics } = useLibrary();
 
   if (!user) return <Loading />;
 
   const total = proverbs.length;
   const ids = new Set(proverbs.map((p) => p.id));
   const learned = user.completedProverbs.filter((id) => ids.has(id)).length;
-  const topicsTotal = groupByTopic(proverbs).size;
-  const topicsDone = user.completedTopics?.length ?? 0;
+  const topicsTotal = topics.length;
+  const topicsDone = user.completedTopics.filter((t) => topics.some((x) => x.id === t)).length;
   const points = user.points;
   const level = levelFor(points);
 

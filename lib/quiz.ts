@@ -7,7 +7,7 @@ import type { Proverb } from "./types";
  */
 export type ChoiceQuestion = {
   kind: "choice";
-  proverbId: number;
+  proverbId: string;
   prompt: string;
   options: string[];
   answer: string;
@@ -15,14 +15,14 @@ export type ChoiceQuestion = {
 
 export type CompletionQuestion = {
   kind: "completion";
-  proverbId: number;
+  proverbId: string;
   prompt: string;
   answer: string;
 };
 
 export type MatchQuestion = {
   kind: "match";
-  pairs: { proverbId: number; text: string; meaning: string }[];
+  pairs: { proverbId: string; text: string; meaning: string }[];
   meanings: string[];
 };
 
@@ -102,7 +102,7 @@ export function buildTest(lesson: Proverb[], pool: Proverb[]): Question[] {
   return shuffled;
 }
 
-export type Answer = string | Record<number, string> | undefined;
+export type Answer = string | Record<string, string> | undefined;
 
 export function isCorrect(q: Question, answer: Answer): boolean {
   if (answer === undefined) return false;

@@ -3,23 +3,25 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { LoadError, Loading, ProgressBar } from "@/components/ui";
-import { groupByTopic, useProverbs } from "@/lib/proverbs";
-import { getTopicMeta } from "@/lib/topics";
+import { groupByTopic, topicMeta, useLibrary } from "@/lib/proverbs";
 import { useCurrentUser } from "@/lib/user";
 
 export function TopicList() {
   const user = useCurrentUser();
-  const { proverbs, loading, error } = useProverbs();
-  const groups = useMemo(() => [...groupByTopic(proverbs)], [proverbs]);
+  const { proverbs, topics, loading, error } = useLibrary();
+  const groups = useMemo(() => [...groupByTopic(proverbs, topics)], [proverbs, topics]);
   const learned = useMemo(() => new Set(user?.completedProverbs), [user]);
 
   if (error) return <LoadError />;
   if (loading) return <Loading />;
+  if (groups.length === 0) {
+    return <p className="py-16 text-center text-muted">Сабақтар әлі қосылмаған. Кейінірек тексеріңіз.</p>;
+  }
 
   return (
     <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {groups.map(([topic, list]) => {
-        const meta = getTopicMeta(topic);
+        const meta = topicMeta(topics, topic);
         const done = list.filter((p) => learned.has(p.id)).length;
         return (
           <li key={topic}>
@@ -38,7 +40,7 @@ export function TopicList() {
               </div>
               <p className="flex-1 text-muted">{meta.description}</p>
               <div className="mt-4">
-                <ProgressBar value={(done / list.length) * 100} label={`${meta.title}: прогресс`} />
+                <ProgressBar value={list.length ? (done / list.length) * 100 : 0} label={`${meta.title}: прогресс`} />
                 <div className="mt-2 flex items-center justify-between text-sm">
                   <span>
                     {done}/{list.length} мақал

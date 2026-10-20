@@ -1,15 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { Proverb } from "./types";
+import { doc, getDoc } from "firebase/firestore";
+import { useSyncExternalStore } from "react";
+import { db } from "./firebase";
+import type { Proverb, Topic } from "./types";
 
-/** Статический JSON, который Next собирает из data/proverbs.json (app/data/proverbs.json/route.ts). */
-const PROVERBS_URL = "/data/proverbs.json";
+/*
+  Как мақалы лежат в Firestore (дёшево по лимиту чтений на бесплатном тарифе):
+    meta/library        { version, chunks: string[], topics: Topic[] }
+    proverbChunks/{id}  { items: Proverb[] }   до CHUNK_SIZE мақалов в документе
+  Браузер хранит копию в localStorage и перечитывает пачки только при смене version.
+  Обычный визит = 1 чтение (meta), а не тысячи.
+*/
+export const CHUNK_SIZE = 1000;
+const CACHE_KEY = "marjansoz_library";
 
-export type IndexedProverb = Proverb & { search: string };
+export type LibraryMeta = { version: number; chunks: string[]; topics: Topic[] };
+export type IndexedProverb = Proverb & { search: string; chunk: string };
+export type Library = { version: number; chunks: string[]; topics: Topic[]; proverbs: IndexedProverb[] };
 
-let cache: IndexedProverb[] | null = null;
-let pending: Promise<IndexedProverb[]> | null = null;
+type State = { library: Library | null; loading: boolean; error: boolean };
+
+let state: State = { library: null, loading: true, error: false };
+let pending: Promise<void> | null = null;
+const listeners = new Set<() => void>();
+
+function setState(next: State) {
+  state = next;
+  listeners.forEach((l) => l());
+}
 
 export function normalize(value: string): string {
   return value
@@ -19,58 +38,108 @@ export function normalize(value: string): string {
     .trim();
 }
 
-/** Загружает мақалы один раз за сессию и заранее готовит строку для поиска. */
-export function loadProverbs(): Promise<IndexedProverb[]> {
-  if (cache) return Promise.resolve(cache);
-  pending ??= fetch(PROVERBS_URL)
-    .then((res) => {
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json() as Promise<Proverb[]>;
-    })
-    .then((list) => {
-      cache = list.map((p) => ({
-        ...p,
-        search: normalize(`${p.text} ${p.explanation} ${p.translation_ru ?? ""}`),
-      }));
-      return cache;
-    })
-    .catch((err) => {
+type Cached = { version: number; topics: Topic[]; chunks: Record<string, Proverb[]> };
+
+function readCache(): Cached | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? (JSON.parse(raw) as Cached) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(c: Cached) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(c));
+  } catch {
+    // Переполнение localStorage не критично: просто не будет кеша
+  }
+}
+
+function build(version: number, topics: Topic[], chunks: Record<string, Proverb[]>, order: string[]): Library {
+  const proverbs = order.flatMap((chunk) =>
+    (chunks[chunk] ?? []).map((p) => ({
+      ...p,
+      chunk,
+      search: normalize(`${p.text} ${p.explanation} ${p.translation_ru ?? ""}`),
+    })),
+  );
+  return { version, chunks: order, topics: [...topics].sort((a, b) => a.order - b.order), proverbs };
+}
+
+async function fetchLibrary(): Promise<Library> {
+  const metaSnap = await getDoc(doc(db(), "meta", "library"));
+  const meta: LibraryMeta = metaSnap.exists()
+    ? (metaSnap.data() as LibraryMeta)
+    : { version: 0, chunks: [], topics: [] };
+
+  const cached = readCache();
+  if (cached && cached.version === meta.version) {
+    return build(meta.version, meta.topics, cached.chunks, meta.chunks);
+  }
+
+  const chunks: Record<string, Proverb[]> = {};
+  await Promise.all(
+    meta.chunks.map(async (id) => {
+      const snap = await getDoc(doc(db(), "proverbChunks", id));
+      chunks[id] = snap.exists() ? (snap.data().items as Proverb[]) : [];
+    }),
+  );
+  writeCache({ version: meta.version, topics: meta.topics, chunks });
+  return build(meta.version, meta.topics, chunks, meta.chunks);
+}
+
+/** Загружает (или перезагружает после правок в админке) мақалы и темы. */
+export function loadLibrary(force = false): Promise<void> {
+  if (pending && !force) return pending;
+  if (force) setState({ ...state, loading: true });
+  pending = fetchLibrary()
+    .then((library) => setState({ library, loading: false, error: false }))
+    .catch(() => {
       pending = null;
-      throw err;
+      setState({ library: state.library, loading: false, error: true });
     });
   return pending;
 }
 
-type State = { proverbs: IndexedProverb[]; loading: boolean; error: boolean };
-
-export function useProverbs(): State {
-  const [state, setState] = useState<State>(() =>
-    cache ? { proverbs: cache, loading: false, error: false } : { proverbs: [], loading: true, error: false },
-  );
-
-  useEffect(() => {
-    if (cache) return;
-    let alive = true;
-    loadProverbs()
-      .then((proverbs) => alive && setState({ proverbs, loading: false, error: false }))
-      .catch(() => alive && setState({ proverbs: [], loading: false, error: true }));
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  return state;
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  loadLibrary();
+  return () => listeners.delete(listener);
 }
 
-/** Темы в порядке первого появления в данных. */
-export function groupByTopic(proverbs: Proverb[]): Map<string, Proverb[]> {
-  const groups = new Map<string, Proverb[]>();
+const SERVER_STATE: State = { library: null, loading: true, error: false };
+
+export function useLibrary() {
+  const s = useSyncExternalStore(subscribe, () => state, () => SERVER_STATE);
+  return {
+    proverbs: s.library?.proverbs ?? EMPTY,
+    topics: s.library?.topics ?? NO_TOPICS,
+    version: s.library?.version ?? 0,
+    chunks: s.library?.chunks ?? NO_CHUNKS,
+    loading: s.loading && !s.library,
+    error: s.error && !s.library,
+  };
+}
+
+const EMPTY: IndexedProverb[] = [];
+const NO_TOPICS: Topic[] = [];
+const NO_CHUNKS: string[] = [];
+
+/** Мақалы по темам; порядок тем как в админке, пустые темы тоже показываются. */
+export function groupByTopic<T extends Proverb>(proverbs: T[], topics: Topic[]): Map<string, T[]> {
+  const groups = new Map<string, T[]>(topics.map((t) => [t.id, []]));
   for (const p of proverbs) {
     const list = groups.get(p.topic);
     if (list) list.push(p);
     else groups.set(p.topic, [p]);
   }
   return groups;
+}
+
+export function topicMeta(topics: Topic[], id: string): Topic {
+  return topics.find((t) => t.id === id) ?? { id, title: id, description: "Мақалдар жинағы", icon: "📜", order: 999 };
 }
 
 /** Один и тот же мақал весь день, новый каждый день. */

@@ -1,9 +1,18 @@
 export type Proverb = {
-  id: number;
+  id: string;
   text: string;
   translation_ru: string;
   topic: string;
   explanation: string;
+};
+
+/** Тақырып = сабақ. Создаётся и редактируется в админке. */
+export type Topic = {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  order: number;
 };
 
 export type BalamaWord = {
@@ -13,16 +22,17 @@ export type BalamaWord = {
   icon: string;
 };
 
-/** Формат пользователя совместим со старым сайтом (localStorage). */
-export type User = {
-  id: number;
+/** Публичный профиль в Firestore: users/{uid}. */
+export type UserProfile = {
   username: string;
-  email: string;
-  password: string;
-  createdAt: string;
-  level: number;
   points: number;
-  completedProverbs: number[];
-  completedTopics?: string[];
-  achievements: string[];
+  completedProverbs: string[];
+  completedTopics: string[];
+  createdAt: string;
+};
+
+export type User = UserProfile & {
+  id: string;
+  email: string;
+  isAdmin: boolean;
 };

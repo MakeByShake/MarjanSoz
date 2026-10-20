@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Divider, OrnateCard } from "@/components/Ornament";
 import { LoadError, ProgressBar } from "@/components/ui";
-import { proverbOfTheDay, useProverbs } from "@/lib/proverbs";
+import { proverbOfTheDay, useLibrary } from "@/lib/proverbs";
 import { useCurrentUser } from "@/lib/user";
 
 const ACTIONS = [
@@ -15,7 +15,7 @@ const ACTIONS = [
 
 export function Dashboard() {
   const user = useCurrentUser();
-  const { proverbs, loading, error } = useProverbs();
+  const { proverbs, loading, error } = useLibrary();
   const daily = proverbOfTheDay(proverbs);
 
   // Единый источник правды: всего мақалов = длина массива данных
@@ -33,8 +33,10 @@ export function Dashboard() {
         <OrnateCard className="text-center sm:py-12">
           {error ? (
             <LoadError />
-          ) : loading || !daily ? (
+          ) : loading ? (
             <p className="py-6 text-muted">Жүктелуде...</p>
+          ) : !daily ? (
+            <p className="py-6 text-muted">Мақалдар әлі қосылмаған.</p>
           ) : (
             <>
               <blockquote className="font-serif text-2xl italic leading-relaxed text-proverb sm:text-3xl">

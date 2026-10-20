@@ -1,0 +1,63 @@
+rules_version = '2';
+
+// Вставьте этот файл в Firebase Console → Firestore Database → Rules → Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Админ = есть документ admins/{uid}. Создаётся только вручную в консоли.
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Мақалы и темы: читать могут все, менять только админ
+    match /meta/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /proverbChunks/{chunkId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Пользователь может только узнать, админ ли он сам
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Занятые имена (чтобы имя не досталось двоим)
+    match /usernames/{name} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Публичный профиль: имя и очки видны в рейтинге
+    match /users/{uid} {
+      function validProfile() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['username', 'points', 'completedProverbs', 'completedTopics', 'createdAt'])
+          && d.completedProverbs is list
+          && d.completedTopics is list
+          // Очки нельзя накрутить: они всегда равны выученным мақалам × 10
+          && d.points == d.completedProverbs.size() * 10;
+      }
+
+      allow read: if true;
+      allow create: if signedIn() && request.auth.uid == uid
+        && validProfile()
+        && request.resource.data.points == 0
+        && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username.lower())).data.uid == uid;
+      allow update: if signedIn() && request.auth.uid == uid
+        && validProfile()
+        && request.resource.data.username == resource.data.username;
+      allow delete: if false;
+    }
+  }
+}
