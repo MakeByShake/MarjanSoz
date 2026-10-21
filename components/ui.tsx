@@ -27,9 +27,30 @@ export function ProgressBar({ value, label, large }: { value: number; label: str
   );
 }
 
+/** Крутящийся значок загрузки. Цвет берёт от текста (currentColor). */
+export function Spinner({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={`shrink-0 animate-spin ${className}`}>
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" className="opacity-20" />
+      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Текст кнопки во время действия: значок + надпись. */
+export function BusyLabel({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      <Spinner className="h-4 w-4" />
+      {children}
+    </span>
+  );
+}
+
 export function Loading({ label = "Жүктелуде..." }: { label?: string }) {
   return (
-    <p role="status" className="py-16 text-center text-muted">
+    <p role="status" className="flex flex-col items-center gap-3 py-16 text-center text-muted">
+      <Spinner className="h-8 w-8 text-primary dark:text-gold" />
       {label}
     </p>
   );

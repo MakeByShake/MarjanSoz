@@ -3,7 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { Divider, OrnateCard } from "@/components/Ornament";
+import { track } from "@/lib/busy";
 import { login, register, useCurrentUser } from "@/lib/user";
+import { BusyLabel } from "@/components/ui";
 
 export function AuthForms() {
   const router = useRouter();
@@ -22,7 +24,7 @@ export function AuthForms() {
     const f = new FormData(e.currentTarget);
     const get = (k: string) => String(f.get(k) ?? "").trim();
     setBusy(true);
-    const result =
+    const result = await track(async () =>
       mode === "login"
         ? await login(get("email"), String(f.get("password") ?? ""))
         : await register({
@@ -30,7 +32,8 @@ export function AuthForms() {
             email: get("email"),
             password: String(f.get("password") ?? ""),
             confirmPassword: String(f.get("confirmPassword") ?? ""),
-          });
+          }),
+    );
     setBusy(false);
     if (result.ok) router.replace("/dashboard");
     else setError(result.error);
@@ -73,7 +76,7 @@ export function AuthForms() {
         )}
 
         <button type="submit" className="btn-primary w-full" disabled={busy}>
-          {busy ? "Күте тұрыңыз..." : mode === "login" ? "Кіру" : "Тіркелу"}
+          {busy ? <BusyLabel>Күте тұрыңыз...</BusyLabel> : mode === "login" ? "Кіру" : "Тіркелу"}
         </button>
 
         <p className="text-center text-sm">

@@ -6,6 +6,7 @@ import { editBalama, newBalamaId, parseBalamaImport, useBalama, type BalamaImpor
 import { normalize } from "@/lib/proverbs";
 import type { BalamaWord } from "@/lib/types";
 import { dangerBtn, Panel, smallBtn, StatusLine, TextField, useAction } from "./shared";
+import { BusyLabel } from "@/components/ui";
 
 const PAGE_SIZE = 30;
 type Input = Omit<BalamaWord, "id">;
@@ -223,7 +224,7 @@ function BalamaForm({
           Болдырмау
         </button>
         <button type="submit" className="btn-primary" disabled={busy || !w.text.trim() || !w.definition.trim()}>
-          {busy ? "Сақталуда..." : submitLabel}
+          {busy ? <BusyLabel>Сақталуда...</BusyLabel> : submitLabel}
         </button>
       </div>
     </form>

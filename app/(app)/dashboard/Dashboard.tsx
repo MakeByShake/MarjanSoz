@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Divider, OrnateCard } from "@/components/Ornament";
-import { LoadError, ProgressBar } from "@/components/ui";
+import { LoadError, Loading, ProgressBar } from "@/components/ui";
 import { useLessons, useMyResults } from "@/lib/lessons";
 import { proverbOfTheDay, useLibrary } from "@/lib/proverbs";
 import { useCurrentUser } from "@/lib/user";
@@ -35,7 +35,7 @@ export function Dashboard() {
           {error ? (
             <LoadError />
           ) : loading ? (
-            <p className="py-6 text-muted">Жүктелуде...</p>
+            <Loading />
           ) : !daily ? (
             <p className="py-6 text-muted">Мақалдар әлі қосылмаған.</p>
           ) : (

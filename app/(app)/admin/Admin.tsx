@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { syncSeed } from "@/lib/admin";
 import { loadSeedRows } from "@/lib/seed";
 import { SEED_TOPICS, SEED_VERSION } from "@/lib/topics";
-import { Loading, PageHeader } from "@/components/ui";
+import { BusyLabel, Loading, PageHeader } from "@/components/ui";
 import { useBalama } from "@/lib/balama";
 import { useLibrary } from "@/lib/proverbs";
 import { useCurrentUser } from "@/lib/user";
@@ -85,7 +85,7 @@ export function Admin() {
             sync === "error" ? "border-red-700/50 text-red-800 dark:text-red-200" : "border-gold/60"
           }`}
         >
-          {sync === "running" && "⏳ Кітаптағы мақалдар базаға жүктелуде..."}
+          {sync === "running" && <BusyLabel>Кітаптағы мақалдар базаға жүктелуде...</BusyLabel>}
           {sync === "done" && `✅ Кітаптағы мақалдар базаға жүктелді. Барлығы ${library.proverbs.length} мақал.`}
           {sync === "error" && "⚠️ Мақалдарды базаға жүктеу мүмкін болмады. Firestore ережелерін және әкімші құқығын тексеріңіз."}
         </p>

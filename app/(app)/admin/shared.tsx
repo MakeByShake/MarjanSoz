@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@/lib/busy";
 import { FirebaseError } from "firebase/app";
 import { useState, type ReactNode } from "react";
 import type { useLibrary } from "@/lib/proverbs";
@@ -31,7 +32,7 @@ export function useAction() {
     setBusy(true);
     setStatus(null);
     try {
-      await action();
+      await track(action);
       setStatus({ kind: "ok", text: success });
       return true;
     } catch (e) {

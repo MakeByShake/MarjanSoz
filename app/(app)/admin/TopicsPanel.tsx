@@ -5,6 +5,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { deleteTopic, saveTopic } from "@/lib/admin";
 import type { Topic } from "@/lib/types";
 import { Panel, StatusLine, TextField, useAction, type LibraryState } from "./shared";
+import { BusyLabel } from "@/components/ui";
 
 // Код темы (поле topic у мақала): латиница, цифры и дефис
 const ID_PATTERN = /^[a-z0-9-]{2,40}$/;
@@ -171,7 +172,7 @@ function TopicForm({
           Болдырмау
         </button>
         <button type="submit" className="btn-primary" disabled={busy}>
-          {busy ? "Сақталуда..." : isNew ? "Қосу" : "Сақтау"}
+          {busy ? <BusyLabel>Сақталуда...</BusyLabel> : isNew ? "Қосу" : "Сақтау"}
         </button>
       </div>
     </form>

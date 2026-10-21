@@ -3,7 +3,7 @@
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { Loading } from "@/components/ui";
+import { BusyLabel, Loading } from "@/components/ui";
 import { db } from "@/lib/firebase";
 import { deleteResult, effective, setBonus, setManualScore, useLessons } from "@/lib/lessons";
 import { normalize } from "@/lib/proverbs";
@@ -217,7 +217,7 @@ function UserModal({
             <span className="mt-1 block text-xs text-muted">Жалпы ұпайға қосылады (теріс сан да болады).</span>
           </label>
           <button type="submit" className="btn-primary" disabled={busy}>
-            💾 Сақтау
+            {busy ? <BusyLabel>Сақталуда...</BusyLabel> : "💾 Сақтау"}
           </button>
         </form>
 
@@ -397,7 +397,7 @@ function AddUserForm({
           Болдырмау
         </button>
         <button type="submit" className="btn-primary" disabled={busy || !username.trim() || !email.trim() || password.length < 6}>
-          {busy ? "Құрылуда..." : "Қосу"}
+          {busy ? <BusyLabel>Құрылуда...</BusyLabel> : "Қосу"}
         </button>
       </div>
     </form>

@@ -7,6 +7,7 @@ import { addProverb, deleteProverb, updateProverb, type ProverbInput } from "@/l
 import { normalize, topicMeta, type IndexedProverb } from "@/lib/proverbs";
 import type { Topic } from "@/lib/types";
 import { Panel, StatusLine, TextField, useAction, type LibraryState } from "./shared";
+import { BusyLabel } from "@/components/ui";
 
 const PAGE_SIZE = 20;
 
@@ -222,7 +223,7 @@ function ProverbForm({
           Болдырмау
         </button>
         <button type="submit" className="btn-primary" disabled={busy || !data.text.trim()}>
-          {busy ? "Сақталуда..." : submitLabel}
+          {busy ? <BusyLabel>Сақталуда...</BusyLabel> : submitLabel}
         </button>
       </div>
     </form>

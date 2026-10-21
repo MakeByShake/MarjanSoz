@@ -7,6 +7,7 @@ import { normalize } from "@/lib/proverbs";
 import { loadSeedRows } from "@/lib/seed";
 import { SEED_TOPICS } from "@/lib/topics";
 import { Panel, StatusLine, useAction, type LibraryState } from "./shared";
+import { BusyLabel } from "@/components/ui";
 
 const EXAMPLE = `[
   {
@@ -83,10 +84,10 @@ export function ImportPanel({ library }: { library: LibraryState }) {
           Базада жоқтары ғана қосылады, бар мақалдар мен олардың түсіндірмелері өзгермейді.
         </p>
         <p className="mb-4 text-sm">
-          {seedRows.length === 0 ? "Жүктелуде..." : missing === 0 ? "✅ Барлығы базада бар." : <>Базада жоқ: <strong>{missing}</strong> мақал.</>}
+          {seedRows.length === 0 ? <BusyLabel>Жүктелуде...</BusyLabel> : missing === 0 ? "✅ Барлығы базада бар." : <>Базада жоқ: <strong>{missing}</strong> мақал.</>}
         </p>
         <button type="button" className="btn-primary" disabled={busy || seedRows.length === 0 || missing === 0} onClick={loadSeed}>
-          {busy ? "Жүктелуде..." : `${missing} мақалды базаға қосу`}
+          {busy ? <BusyLabel>Жүктелуде...</BusyLabel> : `${missing} мақалды базаға қосу`}
         </button>
       </Panel>
 
@@ -147,7 +148,7 @@ export function ImportPanel({ library }: { library: LibraryState }) {
               disabled={busy}
               onClick={() => (mode === "replace" ? setConfirmReplace(true) : doImport())}
             >
-              {busy ? "Жүктелуде..." : "Импорттау"}
+              {busy ? <BusyLabel>Жүктелуде...</BusyLabel> : "Импорттау"}
             </button>
           </div>
         )}

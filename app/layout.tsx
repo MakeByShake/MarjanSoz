@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { BusyIndicator } from "@/components/BusyIndicator";
 import { Noto_Sans, Noto_Serif } from "next/font/google";
 import "./globals.css";
 
@@ -36,7 +37,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="flex min-h-full flex-col font-sans">{children}</body>
+      <body className="flex min-h-full flex-col font-sans">
+        {children}
+        <BusyIndicator />
+      </body>
     </html>
   );
 }

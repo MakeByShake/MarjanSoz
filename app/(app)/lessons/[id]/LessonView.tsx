@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { OrnateCard } from "@/components/Ornament";
-import { Loading, PageHeader, ProgressBar } from "@/components/ui";
+import { BusyLabel, Loading, PageHeader, ProgressBar } from "@/components/ui";
 import { effective, saveTaskScore, taskPassed, useLesson, useMyResults } from "@/lib/lessons";
 import { useLibrary } from "@/lib/proverbs";
 import { type Answer, correctText, grade, orderWords, shuffle, taskMax, typeInfo } from "@/lib/questions";
@@ -131,7 +131,7 @@ export function LessonView({ id }: { id: string }) {
               disabled={saving}
               onClick={() => (isLast ? finish(phase.task, phase.items, phase.answers) : setPhase({ ...phase, index: phase.index + 1 }))}
             >
-              {saving ? "Сақталуда..." : isLast ? "Аяқтау" : "Келесі →"}
+              {saving ? <BusyLabel>Сақталуда...</BusyLabel> : isLast ? "Аяқтау" : "Келесі →"}
             </button>
           </div>
         </OrnateCard>
