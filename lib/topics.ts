@@ -8,4 +8,4 @@ import type { Topic } from "./types";
 export const SEED_TOPICS: Topic[] = topics;
 
 /** Увеличьте, когда обновили data/proverbs.json: админка сама дольёт изменения в базу. */
-export const SEED_VERSION = 1;
+export const SEED_VERSION = 2;
