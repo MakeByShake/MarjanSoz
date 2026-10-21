@@ -46,18 +46,46 @@ function parseServiceAccount(raw: string): ServiceAccount {
 // firebase-admin грузим внутри запроса: если библиотека не загрузится на хостинге, вернём текст ошибки, а не пустой 500
 async function loadAdmin() {
   try {
-    const [appMod, authMod, storeMod] = await Promise.all([
-      import("firebase-admin/app"),
-      import("firebase-admin/auth"),
-      import("firebase-admin/firestore"),
-    ]);
-    return { ...appMod, getAuth: authMod.getAuth, getFirestore: storeMod.getFirestore };
+    // firebase-admin/auth не используем: на Vercel он падает при загрузке (jwks-rsa → require() ESM-модуля jose)
+    const [appMod, storeMod] = await Promise.all([import("firebase-admin/app"), import("firebase-admin/firestore")]);
+    return { ...appMod, getFirestore: storeMod.getFirestore };
   } catch (e) {
     throw new ConfigError(`firebase-admin жүктелмеді: ${e instanceof Error ? e.message : String(e)}`);
   }
 }
 
 type Admin = Awaited<ReturnType<typeof loadAdmin>>;
+
+// Публичный веб-ключ (тот же, что в lib/firebase.ts) — нужен только для проверки токена через Google
+const WEB_API_KEY = "AIzaSyC3n8GR6HBFRgSHr6IH3IJ2m9teCRx0Lxg";
+const IDENTITY = "https://identitytoolkit.googleapis.com/v1";
+
+/** uid вошедшего админа по его ID-токену. Google сам проверяет подпись и срок токена. */
+async function callerUid(idToken: string): Promise<string | null> {
+  const res = await fetch(`${IDENTITY}/accounts:lookup?key=${WEB_API_KEY}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ idToken }),
+  });
+  if (!res.ok) return null;
+  const data = (await res.json()) as { users?: { localId?: string }[] };
+  return data.users?.[0]?.localId ?? null;
+}
+
+/** Удаляет аккаунт входа от имени сервисного аккаунта. Уже удалённый аккаунт — не ошибка. */
+async function deleteAuthUser(app: App, uid: string) {
+  const { access_token } = await app.options.credential!.getAccessToken();
+  const projectId = app.options.projectId ?? (app.options.credential as { projectId?: string }).projectId ?? "marjansoz";
+  const res = await fetch(`${IDENTITY}/projects/${projectId}/accounts:delete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${access_token}` },
+    body: JSON.stringify({ localId: uid }),
+  });
+  if (res.ok) return;
+  const text = await res.text();
+  if (text.includes("USER_NOT_FOUND")) return;
+  throw new Error(`Аккаунтты жою мүмкін болмады (${res.status}): ${text.slice(0, 300)}`);
+}
 
 function adminApp({ cert, getApps, initializeApp }: Admin): App | null {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -85,15 +113,11 @@ export async function POST(request: Request) {
   const token = request.headers.get("authorization")?.replace(/^Bearer /, "");
   if (!token) return new Response("No token", { status: 401 });
 
-  const { getAuth, getFirestore } = admin;
+  const { getFirestore } = admin;
   try {
     const store = getFirestore(app);
-    let caller: string;
-    try {
-      caller = (await getAuth(app).verifyIdToken(token)).uid;
-    } catch {
-      return new Response("Bad token", { status: 401 });
-    }
+    const caller = await callerUid(token).catch(() => null);
+    if (!caller) return new Response("Bad token", { status: 401 });
     if (!(await store.doc(`admins/${caller}`).get()).exists) return new Response("Not admin", { status: 403 });
 
     const { uid } = (await request.json().catch(() => ({}))) as { uid?: string };
@@ -113,11 +137,7 @@ export async function POST(request: Request) {
     if (username) batch.delete(store.doc(`usernames/${username.replace(/[A-Z]+/g, (m) => m.toLowerCase())}`));
     await batch.commit();
 
-    await getAuth(app)
-      .deleteUser(uid)
-      .catch((e: { code?: string }) => {
-        if (e.code !== "auth/user-not-found") throw e;
-      });
+    await deleteAuthUser(app, uid);
 
     return Response.json({ ok: true });
   } catch (e) {
