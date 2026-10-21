@@ -1,6 +1,4 @@
-import { cert, getApps, initializeApp, type ServiceAccount } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
-import { getFirestore } from "firebase-admin/firestore";
+import type { App, ServiceAccount } from "firebase-admin/app";
 
 /*
   POST /api/admin/delete-user { uid } — полностью удаляет ученика: аккаунт входа, профиль, имя, результаты.
@@ -45,7 +43,23 @@ function parseServiceAccount(raw: string): ServiceAccount {
   };
 }
 
-function adminApp() {
+// firebase-admin грузим внутри запроса: если библиотека не загрузится на хостинге, вернём текст ошибки, а не пустой 500
+async function loadAdmin() {
+  try {
+    const [appMod, authMod, storeMod] = await Promise.all([
+      import("firebase-admin/app"),
+      import("firebase-admin/auth"),
+      import("firebase-admin/firestore"),
+    ]);
+    return { ...appMod, getAuth: authMod.getAuth, getFirestore: storeMod.getFirestore };
+  } catch (e) {
+    throw new ConfigError(`firebase-admin жүктелмеді: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
+type Admin = Awaited<ReturnType<typeof loadAdmin>>;
+
+function adminApp({ cert, getApps, initializeApp }: Admin): App | null {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (!raw) return null;
   if (getApps()[0]) return getApps()[0];
@@ -58,9 +72,11 @@ function adminApp() {
 }
 
 export async function POST(request: Request) {
-  let app;
+  let admin: Admin;
+  let app: App | null;
   try {
-    app = adminApp();
+    admin = await loadAdmin();
+    app = adminApp(admin);
   } catch (e) {
     return new Response(e instanceof Error ? e.message : "FIREBASE_SERVICE_ACCOUNT қате", { status: 500 });
   }
@@ -69,6 +85,7 @@ export async function POST(request: Request) {
   const token = request.headers.get("authorization")?.replace(/^Bearer /, "");
   if (!token) return new Response("No token", { status: 401 });
 
+  const { getAuth, getFirestore } = admin;
   try {
     const store = getFirestore(app);
     let caller: string;
