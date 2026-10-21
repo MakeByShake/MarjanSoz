@@ -1,7 +1,7 @@
 "use client";
 
 import { useDeferredValue, useMemo, useState } from "react";
-import { Pagination } from "@/components/Pagination";
+import { Pagination, PagerCompact } from "@/components/Pagination";
 import { SearchIcon } from "@/components/Icons";
 import { EmptyState, LoadError, Loading } from "@/components/ui";
 import { normalize, topicMeta, useLibrary } from "@/lib/proverbs";
@@ -65,7 +65,7 @@ export function ProverbLibrary() {
             }}
             className="field"
           >
-            <option value="all">Барлық тақырыптар ({proverbs.length})</option>
+            <option value="all">Барлық тақырыптар ({topics.length})</option>
             {topics.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.title} ({counts.get(t.id) ?? 0})
@@ -75,9 +75,12 @@ export function ProverbLibrary() {
         </label>
       </form>
 
-      <p aria-live="polite" className="mb-4 text-sm text-muted">
-        {filtered.length} мақал табылды{pages > 1 ? ` · ${current}/${pages} бет` : ""}
-      </p>
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <p aria-live="polite" className="text-sm text-muted">
+          {filtered.length} мақал табылды
+        </p>
+        <PagerCompact page={current} pages={pages} onPage={setPage} />
+      </div>
 
       {filtered.length === 0 ? (
         <EmptyState icon={<SearchIcon size={24} />} title="Ештеңе табылмады" text="Басқа сөзбен іздеп көріңіз." />

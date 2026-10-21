@@ -3,6 +3,27 @@
 import { useState, type FormEvent } from "react";
 import { ArrowLeftIcon, ArrowRightIcon } from "./Icons";
 
+/** Короткий переключатель «‹ 4 / 20 ›» — для строки над списком. page начинается с 1. */
+export function PagerCompact({ page, pages, onPage }: { page: number; pages: number; onPage: (p: number) => void }) {
+  if (pages <= 1) return null;
+  const btn =
+    "grid h-9 w-9 cursor-pointer place-items-center rounded-xl border border-line bg-card transition-colors hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:border-gold/50";
+  return (
+    <nav aria-label="Беттер (қысқа)" className="flex items-center gap-2 text-sm">
+      <button type="button" className={btn} disabled={page === 1} onClick={() => onPage(page - 1)} aria-label="Алдыңғы бет">
+        <ArrowLeftIcon size={16} />
+      </button>
+      <span className="min-w-16 text-center tabular-nums">
+        <span className="font-semibold text-heading">{page}</span>
+        <span className="text-muted"> / {pages}</span>
+      </span>
+      <button type="button" className={btn} disabled={page === pages} onClick={() => onPage(page + 1)} aria-label="Келесі бет">
+        <ArrowRightIcon size={16} />
+      </button>
+    </nav>
+  );
+}
+
 /** Нумерованные страницы: ‹ 1 … 4 5 6 … 20 ›. page начинается с 1. */
 export function Pagination({ page, pages, onPage }: { page: number; pages: number; onPage: (p: number) => void }) {
   const [jump, setJump] = useState("");
