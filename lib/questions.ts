@@ -113,7 +113,11 @@ function withDistractors(right: string, others: string[]) {
     wrong.push(o);
     if (wrong.length === 3) break;
   }
-  const options = shuffle([right, ...wrong]);
+  // Регистр первой буквы как у правильного ответа, чтобы он не выделялся
+  const upper = right[0] !== undefined && right[0] === right[0].toLocaleUpperCase("kk") && right[0] !== right[0].toLocaleLowerCase("kk");
+  const sameCase = (o: string) =>
+    (upper ? o[0].toLocaleUpperCase("kk") : o[0].toLocaleLowerCase("kk")) + o.slice(1);
+  const options = shuffle([right, ...wrong.map(sameCase)]);
   return { options, correct: [options.indexOf(right)] };
 }
 
@@ -235,6 +239,8 @@ function withPart(q: LessonQuestion, preset: Preset, pool: { text: string }[]): 
 /** Заполняет вопрос из мақала. Всё потом можно поправить вручную. */
 export function fillFromProverb(q: LessonQuestion, p: Proverb, pool: Proverb[]): LessonQuestion {
   const others = pool.filter((o) => o.id !== p.id);
+  // Для вопросов о смысле берём только мақалы с толкованием
+  const explained = others.filter((o) => o.explanation.trim());
   const source = { kind: "proverb" as const, id: p.id };
   switch (q.type) {
     case "ending":
@@ -244,17 +250,17 @@ export function fillFromProverb(q: LessonQuestion, p: Proverb, pool: Proverb[]):
       return withPart({ ...q, source, full: p.text }, "word", pool);
     case "meaning":
     case "single":
-      return { ...q, source, text: p.text, ...withDistractors(p.explanation, others.map((o) => o.explanation)) };
+      return { ...q, source, text: p.text, ...withDistractors(p.explanation, explained.map((o) => o.explanation)) };
     case "order":
       return { ...q, source, text: "", answer: p.text };
     case "match": {
-      const same = shuffle(others.filter((o) => o.topic === p.topic));
-      const rest3 = [...same, ...shuffle(others.filter((o) => o.topic !== p.topic))].slice(0, 3);
+      const same = shuffle(explained.filter((o) => o.topic === p.topic));
+      const rest3 = [...same, ...shuffle(explained.filter((o) => o.topic !== p.topic))].slice(0, 3);
       return { ...q, source, pairs: [p, ...rest3].map((x) => ({ left: x.text, right: x.explanation })) };
     }
     case "truefalse": {
-      const honest = Math.random() < 0.5 || others.length === 0;
-      const meaning = honest ? p.explanation : shuffle(others)[0].explanation;
+      const honest = Math.random() < 0.5 || explained.length === 0;
+      const meaning = honest ? p.explanation : shuffle(explained)[0].explanation;
       return { ...q, source, text: `«${p.text}» мақалының мағынасы: ${meaning}`, options: [...TRUE_FALSE], correct: [honest ? 0 : 1] };
     }
     case "multiple": {

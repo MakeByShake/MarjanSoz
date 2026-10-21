@@ -86,6 +86,16 @@ function Editor({ initial, libs, onBack }: { initial: Lesson; libs: Libraries; o
     return () => window.removeEventListener("beforeunload", warn);
   }, [save]);
 
+  async function saveNow() {
+    setSave("saving");
+    try {
+      await saveLesson(lesson);
+      setSave((st) => (st === "saving" ? "saved" : st));
+    } catch {
+      setSave("error");
+    }
+  }
+
   async function back() {
     if (save !== "saved") {
       try {
@@ -124,6 +134,9 @@ function Editor({ initial, libs, onBack }: { initial: Lesson; libs: Libraries; o
         <a href={`/lessons/${lesson.id}`} target="_blank" rel="noreferrer" className={smallBtn}>
           👁 Алдын ала көру
         </a>
+        <button type="button" className="btn-primary min-h-9 px-4 py-1 text-sm" onClick={saveNow} disabled={save === "saving"}>
+          💾 Сақтау
+        </button>
       </div>
 
       <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -350,6 +363,15 @@ function Editor({ initial, libs, onBack }: { initial: Lesson; libs: Libraries; o
           })}
         </ol>
       </Panel>
+
+      <div className="sticky bottom-4 z-30 flex items-center justify-end gap-3 rounded-2xl border border-line bg-card/95 p-3 shadow-lg backdrop-blur">
+        <span aria-live="polite" className={`text-sm ${save === "error" ? "text-red-800 dark:text-red-200" : "text-muted"}`}>
+          {SAVE_LABEL[save]}
+        </span>
+        <button type="button" className="btn-primary" onClick={saveNow} disabled={save === "saving"}>
+          💾 Сақтау
+        </button>
+      </div>
 
       {pickingStudy && (
         <LibraryPicker

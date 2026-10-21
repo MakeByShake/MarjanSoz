@@ -1,0 +1,534 @@
+[
+ {
+  "id": "otan",
+  "title": "Отан. Ел. Жер",
+  "description": "Отан. Ел. Жер туралы мақалдар",
+  "icon": "🇰🇿",
+  "order": 1
+ },
+ {
+  "id": "otbasy",
+  "title": "Үй. Отбасы",
+  "description": "Үй. Отбасы туралы мақалдар",
+  "icon": "🏠",
+  "order": 2
+ },
+ {
+  "id": "ata-ana",
+  "title": "Ата. Ана",
+  "description": "Ата. Ана туралы мақалдар",
+  "icon": "👪",
+  "order": 3
+ },
+ {
+  "id": "bala",
+  "title": "Бала. Перзент",
+  "description": "Бала. Перзент туралы мақалдар",
+  "icon": "👶",
+  "order": 4
+ },
+ {
+  "id": "er-batyr",
+  "title": "Ер. Жігіт. Батыр",
+  "description": "Ер. Жігіт. Батыр туралы мақалдар",
+  "icon": "🛡️",
+  "order": 5
+ },
+ {
+  "id": "kelin-aiel",
+  "title": "Келін. Әйел",
+  "description": "Келін. Әйел туралы мақалдар",
+  "icon": "👩",
+  "order": 6
+ },
+ {
+  "id": "qyz",
+  "title": "Қыз",
+  "description": "Қыз туралы мақалдар",
+  "icon": "👧",
+  "order": 7
+ },
+ {
+  "id": "jas-karttyk",
+  "title": "Жас. Қарттық",
+  "description": "Жас. Қарттық туралы мақалдар",
+  "icon": "👴",
+  "order": 8
+ },
+ {
+  "id": "adam",
+  "title": "Адам. Кісі",
+  "description": "Адам. Кісі туралы мақалдар",
+  "icon": "🧑",
+  "order": 9
+ },
+ {
+  "id": "agaiyn",
+  "title": "Ағайын",
+  "description": "Ағайын туралы мақалдар",
+  "icon": "🤝",
+  "order": 10
+ },
+ {
+  "id": "dostyk",
+  "title": "Дос. Жолдас",
+  "description": "Дос. Жолдас туралы мақалдар",
+  "icon": "🫂",
+  "order": 11
+ },
+ {
+  "id": "jaksy",
+  "title": "Жақсы",
+  "description": "Жақсы туралы мақалдар",
+  "icon": "🌟",
+  "order": 12
+ },
+ {
+  "id": "jaman",
+  "title": "Жаман",
+  "description": "Жаман туралы мақалдар",
+  "icon": "⚠️",
+  "order": 13
+ },
+ {
+  "id": "bi-kosem",
+  "title": "Би. Көсем",
+  "description": "Би. Көсем туралы мақалдар",
+  "icon": "⚖️",
+  "order": 14
+ },
+ {
+  "id": "bilm",
+  "title": "Білім. Ғылым",
+  "description": "Білім. Ғылым туралы мақалдар",
+  "icon": "📚",
+  "order": 15
+ },
+ {
+  "id": "jomart",
+  "title": "Жомарт",
+  "description": "Жомарт туралы мақалдар",
+  "icon": "🎁",
+  "order": 16
+ },
+ {
+  "id": "peiil",
+  "title": "Пейіл. Ниет. Тілек",
+  "description": "Пейіл. Ниет. Тілек туралы мақалдар",
+  "icon": "💗",
+  "order": 17
+ },
+ {
+  "id": "qonaq",
+  "title": "Қонақ",
+  "description": "Қонақ туралы мақалдар",
+  "icon": "🍽️",
+  "order": 18
+ },
+ {
+  "id": "korshi",
+  "title": "Көрші",
+  "description": "Көрші туралы мақалдар",
+  "icon": "🏘️",
+  "order": 19
+ },
+ {
+  "id": "aqyl",
+  "title": "Ақыл. Ой",
+  "description": "Ақыл. Ой туралы мақалдар",
+  "icon": "🧠",
+  "order": 20
+ },
+ {
+  "id": "ashu",
+  "title": "Ашу. Нәпсі",
+  "description": "Ашу. Нәпсі туралы мақалдар",
+  "icon": "😤",
+  "order": 21
+ },
+ {
+  "id": "adep",
+  "title": "Әдеп",
+  "description": "Әдеп туралы мақалдар",
+  "icon": "🙇",
+  "order": 22
+ },
+ {
+  "id": "paida",
+  "title": "Пайда. Зиян",
+  "description": "Пайда. Зиян туралы мақалдар",
+  "icon": "⚖️",
+  "order": 23
+ },
+ {
+  "id": "jau",
+  "title": "Жау. Дұшпан",
+  "description": "Жау. Дұшпан туралы мақалдар",
+  "icon": "⚔️",
+  "order": 24
+ },
+ {
+  "id": "til-soz",
+  "title": "Тіл. Сөз. Мақал",
+  "description": "Тіл. Сөз. Мақал туралы мақалдар",
+  "icon": "🗣️",
+  "order": 25
+ },
+ {
+  "id": "din",
+  "title": "Дін",
+  "description": "Дін туралы мақалдар",
+  "icon": "🕌",
+  "order": 26
+ },
+ {
+  "id": "oner",
+  "title": "Өнер",
+  "description": "Өнер туралы мақалдар",
+  "icon": "🎨",
+  "order": 27
+ },
+ {
+  "id": "as-dam",
+  "title": "Ас. Дәм",
+  "description": "Ас. Дәм туралы мақалдар",
+  "icon": "🥘",
+  "order": 28
+ },
+ {
+  "id": "kasip",
+  "title": "Кәсіп. Нәсіп",
+  "description": "Кәсіп. Нәсіп туралы мақалдар",
+  "icon": "🛠️",
+  "order": 29
+ },
+ {
+  "id": "ena",
+  "title": "Еңбек",
+  "description": "Еңбек туралы мақалдар",
+  "icon": "⚒️",
+  "order": 30
+ },
+ {
+  "id": "jalqau",
+  "title": "Жалқау, еріншек",
+  "description": "Жалқау, еріншек туралы мақалдар",
+  "icon": "😴",
+  "order": 31
+ },
+ {
+  "id": "bailyq",
+  "title": "Байлық",
+  "description": "Байлық туралы мақалдар",
+  "icon": "💰",
+  "order": 32
+ },
+ {
+  "id": "kedeilik",
+  "title": "Кедейлік",
+  "description": "Кедейлік туралы мақалдар",
+  "icon": "🪙",
+  "order": 33
+ },
+ {
+  "id": "eginshilik",
+  "title": "Егіншілік",
+  "description": "Егіншілік туралы мақалдар",
+  "icon": "🌾",
+  "order": 34
+ },
+ {
+  "id": "minez",
+  "title": "Мінез",
+  "description": "Мінез туралы мақалдар",
+  "icon": "🎭",
+  "order": 35
+ },
+ {
+  "id": "bazar",
+  "title": "Базар. Сауда",
+  "description": "Базар. Сауда туралы мақалдар",
+  "icon": "🛒",
+  "order": 36
+ },
+ {
+  "id": "mezgil",
+  "title": "Мезгіл",
+  "description": "Мезгіл туралы мақалдар",
+  "icon": "⏳",
+  "order": 37
+ },
+ {
+  "id": "arman",
+  "title": "Арман",
+  "description": "Арман туралы мақалдар",
+  "icon": "🌠",
+  "order": 38
+ },
+ {
+  "id": "ar-uyat",
+  "title": "Ар. Ұят",
+  "description": "Ар. Ұят туралы мақалдар",
+  "icon": "😳",
+  "order": 39
+ },
+ {
+  "id": "konil",
+  "title": "Көңіл",
+  "description": "Көңіл туралы мақалдар",
+  "icon": "💭",
+  "order": 40
+ },
+ {
+  "id": "otirik",
+  "title": "Өтірік",
+  "description": "Өтірік туралы мақалдар",
+  "icon": "🤥",
+  "order": 41
+ },
+ {
+  "id": "shyndyq",
+  "title": "Шындық",
+  "description": "Шындық туралы мақалдар",
+  "icon": "✅",
+  "order": 42
+ },
+ {
+  "id": "olim",
+  "title": "Өлім. Тіршілік",
+  "description": "Өлім. Тіршілік туралы мақалдар",
+  "icon": "🕯️",
+  "order": 43
+ },
+ {
+  "id": "kulki",
+  "title": "Күлкі",
+  "description": "Күлкі туралы мақалдар",
+  "icon": "😄",
+  "order": 44
+ },
+ {
+  "id": "mahabbat",
+  "title": "Махаббат. Сұлулық",
+  "description": "Махаббат. Сұлулық туралы мақалдар",
+  "icon": "💐",
+  "order": 45
+ },
+ {
+  "id": "toi",
+  "title": "Той",
+  "description": "Той туралы мақалдар",
+  "icon": "🎉",
+  "order": 46
+ },
+ {
+  "id": "birlik",
+  "title": "Бірлік. Ынтымақ",
+  "description": "Бірлік. Ынтымақ туралы мақалдар",
+  "icon": "🤝",
+  "order": 47
+ },
+ {
+  "id": "baq",
+  "title": "Бақ",
+  "description": "Бақ туралы мақалдар",
+  "icon": "🍀",
+  "order": 48
+ },
+ {
+  "id": "tentek",
+  "title": "Тентек",
+  "description": "Тентек туралы мақалдар",
+  "icon": "😈",
+  "order": 49
+ },
+ {
+  "id": "aqymaq",
+  "title": "Ақымақ. Ақылсыздық",
+  "description": "Ақымақ. Ақылсыздық туралы мақалдар",
+  "icon": "🤪",
+  "order": 50
+ },
+ {
+  "id": "densaulyq",
+  "title": "Денсаулық",
+  "description": "Денсаулық туралы мақалдар",
+  "icon": "💪",
+  "order": 51
+ },
+ {
+  "id": "kemdik",
+  "title": "Кемдік",
+  "description": "Кемдік туралы мақалдар",
+  "icon": "🩹",
+  "order": 52
+ },
+ {
+  "id": "urlyq",
+  "title": "Ұрлық",
+  "description": "Ұрлық туралы мақалдар",
+  "icon": "🦹",
+  "order": 53
+ },
+ {
+  "id": "mal",
+  "title": "Мал",
+  "description": "Мал туралы мақалдар",
+  "icon": "🐄",
+  "order": 54
+ },
+ {
+  "id": "at",
+  "title": "Ат. Жылқы",
+  "description": "Ат. Жылқы туралы мақалдар",
+  "icon": "🐎",
+  "order": 55
+ },
+ {
+  "id": "qoi",
+  "title": "Қой",
+  "description": "Қой туралы мақалдар",
+  "icon": "🐑",
+  "order": 56
+ },
+ {
+  "id": "eshki",
+  "title": "Ешкі",
+  "description": "Ешкі туралы мақалдар",
+  "icon": "🐐",
+  "order": 57
+ },
+ {
+  "id": "tuie",
+  "title": "Түйе",
+  "description": "Түйе туралы мақалдар",
+  "icon": "🐫",
+  "order": 58
+ },
+ {
+  "id": "siyr",
+  "title": "Сиыр",
+  "description": "Сиыр туралы мақалдар",
+  "icon": "🐮",
+  "order": 59
+ },
+ {
+  "id": "esek",
+  "title": "Есек",
+  "description": "Есек туралы мақалдар",
+  "icon": "🫏",
+  "order": 60
+ },
+ {
+  "id": "an",
+  "title": "Аң",
+  "description": "Аң туралы мақалдар",
+  "icon": "🦌",
+  "order": 61
+ },
+ {
+  "id": "arystan",
+  "title": "Арыстан",
+  "description": "Арыстан туралы мақалдар",
+  "icon": "🦁",
+  "order": 62
+ },
+ {
+  "id": "qoian",
+  "title": "Қоян",
+  "description": "Қоян туралы мақалдар",
+  "icon": "🐇",
+  "order": 63
+ },
+ {
+  "id": "qasqyr",
+  "title": "Қасқыр. Түлкі. Балық",
+  "description": "Қасқыр. Түлкі. Балық туралы мақалдар",
+  "icon": "🐺",
+  "order": 64
+ },
+ {
+  "id": "qus",
+  "title": "Құс",
+  "description": "Құс туралы мақалдар",
+  "icon": "🦅",
+  "order": 65
+ },
+ {
+  "id": "it",
+  "title": "Ит",
+  "description": "Ит туралы мақалдар",
+  "icon": "🐕",
+  "order": 66
+ },
+ {
+  "id": "jol",
+  "title": "Жол. Сапар",
+  "description": "Жол. Сапар туралы мақалдар",
+  "icon": "🛤️",
+  "order": 67
+ },
+ {
+  "id": "ai-kun",
+  "title": "Ай. Күн. Ғалам",
+  "description": "Ай. Күн. Ғалам туралы мақалдар",
+  "icon": "🌙",
+  "order": 68
+ },
+ {
+  "id": "saqtyq",
+  "title": "Сақтық",
+  "description": "Сақтық туралы мақалдар",
+  "icon": "🛡️",
+  "order": 69
+ },
+ {
+  "id": "salem",
+  "title": "Сәлем",
+  "description": "Сәлем туралы мақалдар",
+  "icon": "🙏",
+  "order": 70
+ },
+ {
+  "id": "qorqaq",
+  "title": "Қорқақ",
+  "description": "Қорқақ туралы мақалдар",
+  "icon": "😨",
+  "order": 71
+ },
+ {
+  "id": "adildik",
+  "title": "Әділдік. Адалдық",
+  "description": "Әділдік. Адалдық туралы мақалдар",
+  "icon": "⚖️",
+  "order": 72
+ },
+ {
+  "id": "keshirim",
+  "title": "Кешірім",
+  "description": "Кешірім туралы мақалдар",
+  "icon": "🕊️",
+  "order": 73
+ },
+ {
+  "id": "sabyr",
+  "title": "Сабыр",
+  "description": "Сабыр туралы мақалдар",
+  "icon": "🧘",
+  "order": 74
+ },
+ {
+  "id": "qaryz",
+  "title": "Қарыз. Несие",
+  "description": "Қарыз. Несие туралы мақалдар",
+  "icon": "💳",
+  "order": 75
+ },
+ {
+  "id": "jalgyzdyq",
+  "title": "Жалғыздық",
+  "description": "Жалғыздық туралы мақалдар",
+  "icon": "🌵",
+  "order": 76
+ }
+]

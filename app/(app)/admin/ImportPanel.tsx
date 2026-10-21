@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import seed from "@/data/proverbs.json";
 import { parseImport, prepareImport, replaceAllProverbs, type ImportRow } from "@/lib/admin";
+import { normalize } from "@/lib/proverbs";
 import { SEED_TOPICS } from "@/lib/topics";
 import { Panel, StatusLine, useAction, type LibraryState } from "./shared";
 
@@ -38,48 +39,67 @@ export function ImportPanel({ library }: { library: LibraryState }) {
     }
   }
 
+  const seedRows: ImportRow[] = seed.map((p) => ({ ...p, id: String(p.id) }));
+  const known = new Set(proverbs.map((p) => normalize(p.text)));
+  const missing = seedRows.filter((r) => !known.has(normalize(r.text))).length;
+
+  async function loadSeed() {
+    const next = prepareImport(seedRows, proverbs, topics, "append", SEED_TOPICS);
+    await run(
+      () => replaceAllProverbs(next.proverbs, next.topics, chunks, version),
+      `${next.added} мақал қосылды${next.newTopics ? `, ${next.newTopics} жаңа тақырып құрылды` : ""}`,
+    );
+  }
+
+  function exportBackup() {
+    const data = proverbs.map(({ id, text, translation_ru, topic, explanation }) => ({ id, text, translation_ru, topic, explanation }));
+    const blob = new Blob([JSON.stringify(data, null, 1)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `marjansoz-maqaldar-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   async function doImport() {
     if (!rows) return;
-    const next = prepareImport(rows, proverbs, topics, mode);
+    const next = prepareImport(rows, proverbs, topics, mode, SEED_TOPICS);
     const ok = await run(
       () => replaceAllProverbs(next.proverbs, next.topics, chunks, version),
-      `${rows.length} мақал жүктелді${next.newTopics ? `, ${next.newTopics} жаңа тақырып құрылды` : ""}`,
+      `${next.added} мақал жүктелді${rows.length > next.added ? ` (${rows.length - next.added} қайталанғаны өткізілді)` : ""}${next.newTopics ? `, ${next.newTopics} жаңа тақырып құрылды` : ""}`,
     );
     if (ok) setRows(null);
   }
 
   return (
     <div className="space-y-6">
-      {proverbs.length === 0 && (
-        <Panel title="Бастапқы деректер">
-          <p className="mb-4 text-muted">
-            База әзірге бос. Сайттағы 20 мақал мен {SEED_TOPICS.length} тақырыпты бір басумен жүктеуге болады.
-          </p>
-          <button
-            type="button"
-            className="btn-primary"
-            disabled={busy}
-            onClick={() =>
-              run(
-                () =>
-                  replaceAllProverbs(
-                    seed.map((p) => ({ ...p, id: String(p.id) })),
-                    SEED_TOPICS,
-                    chunks,
-                    version,
-                  ),
-                "Бастапқы деректер жүктелді",
-              )
-            }
-          >
-            {busy ? "Жүктелуде..." : "Бастапқы деректерді жүктеу"}
-          </button>
-        </Panel>
-      )}
+      <Panel title="Кітаптағы мақалдар">
+        <p className="mb-2 text-muted">
+          «Мақал – сөздің маржаны» (С. Қалиев, 2022) кітабының {seedRows.length} мақалы {SEED_TOPICS.length} тақырыпқа бөлінген.
+          Базада жоқтары ғана қосылады, бар мақалдар мен олардың түсіндірмелері өзгермейді.
+        </p>
+        <p className="mb-4 text-sm">
+          {missing === 0 ? "✅ Барлығы базада бар." : <>Базада жоқ: <strong>{missing}</strong> мақал.</>}
+        </p>
+        <button type="button" className="btn-primary" disabled={busy || missing === 0} onClick={loadSeed}>
+          {busy ? "Жүктелуде..." : `${missing} мақалды базаға қосу`}
+        </button>
+      </Panel>
+
+      <Panel title="Сақтық көшірме">
+        <p className="mb-4 text-sm text-muted">
+          Базадағы барлық мақалдар мен тақырыптарды JSON файлға жүктеп алыңыз. Бұл файлды кейін «JSON файлдан импорттау»
+          арқылы қайта жүктеуге болады. Код репозиторийінде де толық көшірме сақтаулы: data/proverbs.json.
+        </p>
+        <button type="button" className="btn-secondary" disabled={proverbs.length === 0} onClick={exportBackup}>
+          ⬇️ Көшірмені жүктеп алу ({proverbs.length} мақал)
+        </button>
+      </Panel>
 
       <Panel title="JSON файлдан импорттау">
         <p className="mb-3 text-sm text-muted">
-          Көп мақалды бірден қосу үшін. Әр мақалда <code>text</code>, <code>explanation</code>, <code>topic</code> міндетті,{" "}
+          Көп мақалды бірден қосу үшін. Әр мақалда <code>text</code> пен <code>topic</code> міндетті, <code>explanation</code> және{" "}
           <code>translation_ru</code> міндетті емес. Жоқ тақырыптар (topic) өздігінен құрылады, кейін оларды «Тақырыптар» бөлімінде
           өңдей аласыз.
         </p>

@@ -193,14 +193,14 @@ function ProverbForm({
       explanation: data.explanation.trim(),
       topic: data.topic,
     };
-    if (!clean.text || !clean.explanation) return;
+    if (!clean.text) return;
     onSubmit(clean);
   }
 
   return (
     <form onSubmit={submit} className="space-y-3 rounded-xl border border-gold/50 bg-bg p-4">
       <TextField label="Мақал мәтіні" value={data.text} onChange={set("text")} required placeholder="Мысалы: Білім — инемен құдық қазғандай" />
-      <TextField label="Мағынасы (түсіндірме)" value={data.explanation} onChange={set("explanation")} multiline required />
+      <TextField label="Мағынасы (түсіндірме)" value={data.explanation} onChange={set("explanation")} multiline hint="Міндетті емес, бірақ «Мағынасын тап» сұрақтары үшін керек" />
       <TextField label="Орысша аудармасы" value={data.translation_ru} onChange={set("translation_ru")} lang="ru" hint="Міндетті емес" />
       <label className="block">
         <span className="mb-1 block text-sm font-medium">Тақырып</span>
@@ -216,7 +216,7 @@ function ProverbForm({
         <button type="button" className="btn-secondary" onClick={onCancel} disabled={busy}>
           Болдырмау
         </button>
-        <button type="submit" className="btn-primary" disabled={busy || !data.text.trim() || !data.explanation.trim()}>
+        <button type="submit" className="btn-primary" disabled={busy || !data.text.trim()}>
           {busy ? "Сақталуда..." : submitLabel}
         </button>
       </div>

@@ -2,7 +2,7 @@
 
 import { collection, doc, runTransaction, writeBatch } from "firebase/firestore";
 import { db } from "./firebase";
-import { CHUNK_SIZE, loadLibrary, type LibraryMeta } from "./proverbs";
+import { CHUNK_SIZE, loadLibrary, normalize, type LibraryMeta } from "./proverbs";
 import type { Proverb, Topic } from "./types";
 
 /*
@@ -103,6 +103,8 @@ export async function replaceAllProverbs(proverbs: Proverb[], topics: Topic[], o
 
 export type ImportRow = Partial<Proverb> & { text: string; topic: string; explanation: string };
 
+const textKey = (t: string) => normalize(t);
+
 /** Проверяет файл импорта. Возвращает ошибку на казахском или нормализованные строки. */
 export function parseImport(json: unknown): { rows: ImportRow[] } | { error: string } {
   if (!Array.isArray(json)) return { error: "Файлда мақалдар тізімі (массив) болуы керек" };
@@ -112,8 +114,8 @@ export function parseImport(json: unknown): { rows: ImportRow[] } | { error: str
     const text = typeof r?.text === "string" ? r.text.trim() : "";
     const topic = typeof r?.topic === "string" ? r.topic.trim() : "";
     const explanation = typeof r?.explanation === "string" ? r.explanation.trim() : "";
-    if (!text || !topic || !explanation) {
-      return { error: `${i + 1}-жолда text, topic немесе explanation жоқ` };
+    if (!text || !topic) {
+      return { error: `${i + 1}-жолда text немесе topic жоқ` };
     }
     rows.push({
       id: r.id === undefined || r.id === null ? undefined : String(r.id),
@@ -126,11 +128,27 @@ export function parseImport(json: unknown): { rows: ImportRow[] } | { error: str
   return { rows };
 }
 
-/** Собирает итоговый список и темы для импорта. Новые темы создаются автоматически. */
-export function prepareImport(rows: ImportRow[], existing: Proverb[], topics: Topic[], mode: "append" | "replace") {
+/**
+ * Собирает итоговый список и темы для импорта. Новые темы создаются автоматически.
+ * При добавлении мақалы, которые уже есть в базе (тот же текст), пропускаются.
+ */
+export function prepareImport(
+  rows: ImportRow[],
+  existing: Proverb[],
+  topics: Topic[],
+  mode: "append" | "replace",
+  knownTopics: Topic[] = [],
+) {
   const base = mode === "append" ? existing.map(({ id, text, translation_ru, topic, explanation }) => ({ id, text, translation_ru, topic, explanation })) : [];
   const used = new Set(base.map((p) => p.id));
-  const added: Proverb[] = rows.map((r) => {
+  const texts = new Set(base.map((p) => textKey(p.text)));
+  const fresh = rows.filter((r) => {
+    const k = textKey(r.text);
+    if (texts.has(k)) return false;
+    texts.add(k);
+    return true;
+  });
+  const added: Proverb[] = fresh.map((r) => {
     const id = r.id && !used.has(r.id) ? r.id : newId();
     used.add(id);
     return { id, text: r.text, topic: r.topic, explanation: r.explanation, translation_ru: r.translation_ru ?? "" };
@@ -140,8 +158,9 @@ export function prepareImport(rows: ImportRow[], existing: Proverb[], topics: To
   let order = Math.max(0, ...topics.map((t) => t.order));
   for (const p of added) {
     if (!nextTopics.some((t) => t.id === p.topic)) {
-      nextTopics.push({ id: p.topic, title: p.topic, description: "Мақалдар жинағы", icon: "📜", order: ++order });
+      const known = knownTopics.find((t) => t.id === p.topic);
+      nextTopics.push(known ? { ...known, order: ++order } : { id: p.topic, title: p.topic, description: "Мақалдар жинағы", icon: "📜", order: ++order });
     }
   }
-  return { proverbs: [...base, ...added], topics: nextTopics, newTopics: nextTopics.length - topics.length };
+  return { proverbs: [...base, ...added], added: added.length, topics: nextTopics, newTopics: nextTopics.length - topics.length };
 }
