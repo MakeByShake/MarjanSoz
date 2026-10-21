@@ -43,7 +43,8 @@ export async function POST(request: Request) {
   results.docs.forEach((d) => batch.delete(d.ref));
   batch.delete(store.doc(`users/${uid}`));
   batch.delete(store.doc(`admins/${uid}`));
-  if (username) batch.delete(store.doc(`usernames/${username.toLowerCase()}`));
+  // Ключ как в lib/user.ts usernameKey: в нижний регистр только латиница
+  if (username) batch.delete(store.doc(`usernames/${username.replace(/[A-Z]+/g, (m) => m.toLowerCase())}`));
   await batch.commit();
 
   await getAuth(app)

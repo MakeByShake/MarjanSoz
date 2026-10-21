@@ -96,8 +96,10 @@ export function useCurrentUser(): User | null | undefined {
 
 export type AuthResult = { ok: true } | { ok: false; error: string };
 
+const errorCode = (e: unknown) => (e instanceof FirebaseError ? e.code : "");
+
 function authError(e: unknown): string {
-  const code = e instanceof FirebaseError ? e.code : "";
+  const code = errorCode(e);
   switch (code) {
     case "auth/invalid-credential":
     case "auth/wrong-password":
@@ -108,18 +110,45 @@ function authError(e: unknown): string {
     case "auth/invalid-email":
       return "Электронды пошта дұрыс емес";
     case "auth/weak-password":
-      return "Құпия сөз кемінде 6 таңбадан тұруы керек";
+    case "auth/password-does-not-meet-requirements":
+      return "Құпия сөз тым әлсіз: кемінде 6 таңба болуы керек";
+    case "auth/missing-password":
+      return "Құпия сөзді жазыңыз";
+    case "auth/missing-email":
+      return "Электронды поштаны жазыңыз";
+    case "auth/user-disabled":
+      return "Бұл аккаунт бұғатталған. Әкімшіге хабарласыңыз";
+    case "auth/operation-not-allowed":
+      return "Email арқылы тіркелу өшірулі (Firebase Authentication баптауы). Әкімшіге хабарласыңыз";
     case "auth/too-many-requests":
       return "Тым көп әрекет. Біраз уақыттан кейін қайталаңыз";
     case "auth/network-request-failed":
       return "Интернет байланысын тексеріңіз";
     default:
-      return "Қате орын алды. Қайталап көріңіз";
+      return `Қате орын алды (${code || "белгісіз қате"}). Қайталап көріңіз`;
   }
 }
 
+/** Ошибка базы при регистрации — с кодом, чтобы было понятно, что случилось. */
+function storeError(e: unknown): string {
+  const code = errorCode(e);
+  switch (code) {
+    case "permission-denied":
+      return "Профильді сақтауға рұқсат берілмеді (permission-denied). Әкімшіге хабарласыңыз";
+    case "unavailable":
+    case "deadline-exceeded":
+      return "Интернет байланысын тексеріп, қайталаңыз";
+    default:
+      return `Тіркелу кезінде қате орын алды (${code || (e instanceof Error ? e.message : "белгісіз қате")}). Қайталап көріңіз`;
+  }
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export async function login(email: string, password: string): Promise<AuthResult> {
-  if (!email || !password) return { ok: false, error: "Барлық өрістерді толтырыңыз" };
+  if (!email) return { ok: false, error: "Электронды поштаны жазыңыз" };
+  if (!EMAIL_RE.test(email)) return { ok: false, error: "Электронды пошта дұрыс емес (мысалы: name@gmail.com)" };
+  if (!password) return { ok: false, error: "Құпия сөзді жазыңыз" };
   try {
     await signInWithEmailAndPassword(auth(), email, password);
     return { ok: true };
@@ -128,8 +157,12 @@ export async function login(email: string, password: string): Promise<AuthResult
   }
 }
 
-// toLowerCase() совпадает с .lower() в правилах Firestore
-const usernameKey = (name: string) => name.toLowerCase();
+/**
+ * Ключ имени в usernames/{key}. Должен совпадать с .lower() в правилах Firestore,
+ * а он переводит в нижний регистр только латиницу: «Пернегул».lower() == «Пернегул».
+ * Поэтому toLowerCase() (который трогает и кириллицу) здесь нельзя.
+ */
+export const usernameKey = (name: string) => name.replace(/[A-Z]+/g, (m) => m.toLowerCase());
 
 export async function register(
   input: {
@@ -144,20 +177,23 @@ export async function register(
   const authInstance = getAuth(app);
   const store = getFirestore(app);
   const { username, email, password, confirmPassword } = input;
-  if (!username || !email || !password || !confirmPassword) {
-    return { ok: false, error: "Барлық өрістерді толтырыңыз" };
-  }
-  if (username.length > 30 || username.includes("/")) {
-    return { ok: false, error: "Пайдаланушы аты 30 таңбадан аспауы керек, «/» белгісіз" };
-  }
-  if (password !== confirmPassword) return { ok: false, error: "Құпия сөздер сәйкес емес" };
+  if (!username) return { ok: false, error: "Пайдаланушы атын жазыңыз" };
+  if (username.length > 30) return { ok: false, error: "Пайдаланушы аты 30 таңбадан аспауы керек" };
+  if (username.includes("/")) return { ok: false, error: "Пайдаланушы атында «/» белгісі болмауы керек" };
+  if (!email) return { ok: false, error: "Электронды поштаны жазыңыз" };
+  if (!EMAIL_RE.test(email)) return { ok: false, error: "Электронды пошта дұрыс емес (мысалы: name@gmail.com)" };
+  if (!password) return { ok: false, error: "Құпия сөзді жазыңыз" };
   if (password.length < 6) return { ok: false, error: "Құпия сөз кемінде 6 таңбадан тұруы керек" };
+  if (!confirmPassword) return { ok: false, error: "Құпия сөзді қайта жазып растаңыз" };
+  if (password !== confirmPassword) return { ok: false, error: "Құпия сөздер сәйкес емес" };
 
   try {
-    const taken = await getDoc(doc(store, "usernames", usernameKey(username)));
-    if (taken.exists()) return { ok: false, error: "Бұл пайдаланушы аты бос емес" };
-  } catch {
-    return { ok: false, error: "Интернет байланысын тексеріңіз" };
+    // Проверяем и полный нижний регистр: «Айгүл» и «айгүл» не должны стать двумя разными учениками
+    const keys = [...new Set([usernameKey(username), username.toLowerCase()])];
+    const snaps = await Promise.all(keys.map((k) => getDoc(doc(store, "usernames", k))));
+    if (snaps.some((s) => s.exists())) return { ok: false, error: "Бұл пайдаланушы аты бос емес, басқа ат таңдаңыз" };
+  } catch (e) {
+    return { ok: false, error: storeError(e) };
   }
 
   let cred;
@@ -187,8 +223,8 @@ export async function register(
     return { ok: true };
   } catch (e) {
     await deleteUser(cred.user).catch(() => {});
-    if (e instanceof Error && e.message === "taken") return { ok: false, error: "Бұл пайдаланушы аты бос емес" };
-    return { ok: false, error: "Тіркелу кезінде қате орын алды. Қайталап көріңіз" };
+    if (e instanceof Error && e.message === "taken") return { ok: false, error: "Бұл пайдаланушы аты бос емес, басқа ат таңдаңыз" };
+    return { ok: false, error: storeError(e) };
   }
 }
 

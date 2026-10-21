@@ -4,7 +4,7 @@ import { getAuth, sendPasswordResetEmail, signOut } from "firebase/auth";
 import { collection, deleteDoc, doc, getDocs, limit, query, runTransaction, setDoc, where, writeBatch } from "firebase/firestore";
 import { auth, db, secondaryApp } from "./firebase";
 import type { UserProfile } from "./types";
-import { register, type AuthResult } from "./user";
+import { register, usernameKey, type AuthResult } from "./user";
 
 /** Ошибка с текстом для админа (показывается как есть). */
 export class ShownError extends Error {}
@@ -75,7 +75,7 @@ export async function deleteUserEverywhere(uid: string, username: string): Promi
   const batch = writeBatch(db());
   results.docs.forEach((d) => batch.delete(d.ref));
   batch.delete(doc(db(), "users", uid));
-  batch.delete(doc(db(), "usernames", username.toLowerCase()));
+  batch.delete(doc(db(), "usernames", usernameKey(username)));
   batch.delete(doc(db(), "admins", uid));
   batch.delete(doc(db(), "private", uid));
   await batch.commit();
@@ -87,12 +87,12 @@ export async function renameUser(uid: string, oldName: string, newName: string) 
   const name = newName.trim();
   if (!name || name.length > 30 || name.includes("/")) throw new ShownError("Аты 1–30 таңба болуы керек, «/» белгісіз");
   await runTransaction(db(), async (tx) => {
-    const newRef = doc(db(), "usernames", name.toLowerCase());
+    const newRef = doc(db(), "usernames", usernameKey(name));
     const taken = await tx.get(newRef);
     if (taken.exists() && taken.data().uid !== uid) throw new ShownError("Бұл ат бос емес");
-    if (name.toLowerCase() !== oldName.toLowerCase()) {
+    if (usernameKey(name) !== usernameKey(oldName)) {
       tx.set(newRef, { uid });
-      tx.delete(doc(db(), "usernames", oldName.toLowerCase()));
+      tx.delete(doc(db(), "usernames", usernameKey(oldName)));
     }
     tx.update(doc(db(), "users", uid), { username: name });
   });
