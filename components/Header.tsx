@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { logout, useCurrentUser } from "@/lib/user";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { Logo } from "./Logo";
 import { OrnamentBand } from "./Ornament";
 import { ThemeToggle, UserIcon } from "./ThemeToggle";
 
@@ -46,9 +47,8 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 bg-primary text-white shadow-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <Link href="/dashboard" className="flex items-center gap-2 font-serif text-2xl font-bold">
-          <span aria-hidden="true" className="text-gold">❖</span>
-          MarjanSóz
+        <Link href="/dashboard" className="flex items-center text-2xl">
+          <Logo outlined />
         </Link>
 
         <nav aria-label="Негізгі мәзір" className="hidden items-center gap-1 lg:flex">
@@ -135,10 +135,7 @@ export function HeaderFallback() {
   return (
     <header className="sticky top-0 z-40 bg-primary text-white shadow-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center px-4 sm:px-6">
-        <span className="flex items-center gap-2 font-serif text-2xl font-bold">
-          <span aria-hidden="true" className="text-gold">❖</span>
-          MarjanSóz
-        </span>
+        <Logo outlined className="text-2xl" />
       </div>
       <OrnamentBand className="bg-gold" />
     </header>

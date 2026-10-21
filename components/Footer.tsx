@@ -1,3 +1,4 @@
+import { Logo } from "./Logo";
 import { OrnamentBand } from "./Ornament";
 
 export function Footer() {
@@ -5,9 +6,7 @@ export function Footer() {
     <footer className="mt-auto bg-primary text-white">
       <OrnamentBand className="bg-gold" />
       <div className="mx-auto max-w-6xl px-4 py-8 text-center">
-        <div className="font-serif text-2xl font-bold">
-          <span aria-hidden="true" className="text-gold">❖ </span>MarjanSóz
-        </div>
+        <Logo outlined className="text-3xl" />
         <p className="mt-1 text-white/90">Қазақ халқының дана сөзі</p>
       </div>
     </footer>

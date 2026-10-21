@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
+import { Logo } from "@/components/Logo";
 import { Divider, OrnateCard } from "@/components/Ornament";
 import { track } from "@/lib/busy";
 import { login, register, useCurrentUser } from "@/lib/user";
@@ -47,9 +48,7 @@ export function AuthForms() {
   return (
     <OrnateCard className="w-full max-w-md">
       <div className="text-center">
-        <p className="font-serif text-3xl font-bold text-heading">
-          <span aria-hidden="true" className="text-gold">❖ </span>MarjanSóz
-        </p>
+        <Logo className="text-4xl" wordClassName="text-primary dark:text-white" />
         <p className="mt-1 text-muted">Қазақ мақал-мәтелдерін үйрену платформасы</p>
       </div>
       <Divider />

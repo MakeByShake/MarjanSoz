@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { BusyIndicator } from "@/components/BusyIndicator";
-import { Noto_Sans, Noto_Serif } from "next/font/google";
+import { Noto_Sans, Noto_Serif, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
 // cyrillic-ext содержит казахские буквы ә ғ қ ң ө ұ ү һ і
@@ -12,6 +12,13 @@ const notoSans = Noto_Sans({
 const notoSerif = Noto_Serif({
   variable: "--font-noto-serif",
   subsets: ["latin", "cyrillic", "cyrillic-ext"],
+});
+
+// Тек логотип жазуы үшін («MarjanSóz» — латын әріптері)
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
+  subsets: ["latin"],
+  weight: "700",
 });
 
 export const metadata: Metadata = {
@@ -32,7 +39,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="kk"
       data-theme="light"
       suppressHydrationWarning
-      className={`${notoSans.variable} ${notoSerif.variable} h-full antialiased`}
+      className={`${notoSans.variable} ${notoSerif.variable} ${playfair.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
