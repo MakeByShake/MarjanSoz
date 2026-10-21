@@ -15,9 +15,10 @@ import type { Proverb, Topic } from "./types";
 export const CHUNK_SIZE = 1000;
 const CACHE_KEY = "marjansoz_library";
 
-export type LibraryMeta = { version: number; chunks: string[]; topics: Topic[] };
+/** seedVersion — какая версия мақалов из data/proverbs.json уже залита в базу (см. lib/topics.ts). */
+export type LibraryMeta = { version: number; chunks: string[]; topics: Topic[]; seedVersion?: number };
 export type IndexedProverb = Proverb & { search: string; chunk: string };
-export type Library = { version: number; chunks: string[]; topics: Topic[]; proverbs: IndexedProverb[] };
+export type Library = { version: number; chunks: string[]; topics: Topic[]; proverbs: IndexedProverb[]; seedVersion: number };
 
 type State = { library: Library | null; loading: boolean; error: boolean };
 
@@ -57,7 +58,7 @@ function writeCache(c: Cached) {
   }
 }
 
-function build(version: number, topics: Topic[], chunks: Record<string, Proverb[]>, order: string[]): Library {
+function build(version: number, topics: Topic[], chunks: Record<string, Proverb[]>, order: string[], seedVersion = 0): Library {
   const proverbs = order.flatMap((chunk) =>
     (chunks[chunk] ?? []).map((p) => ({
       ...p,
@@ -65,7 +66,7 @@ function build(version: number, topics: Topic[], chunks: Record<string, Proverb[
       search: normalize(`${p.text} ${p.explanation} ${p.translation_ru ?? ""}`),
     })),
   );
-  return { version, chunks: order, topics: [...topics].sort((a, b) => a.order - b.order), proverbs };
+  return { version, chunks: order, topics: [...topics].sort((a, b) => a.order - b.order), proverbs, seedVersion };
 }
 
 async function fetchLibrary(): Promise<Library> {
@@ -76,7 +77,7 @@ async function fetchLibrary(): Promise<Library> {
 
   const cached = readCache();
   if (cached && cached.version === meta.version) {
-    return build(meta.version, meta.topics, cached.chunks, meta.chunks);
+    return build(meta.version, meta.topics, cached.chunks, meta.chunks, meta.seedVersion);
   }
 
   const chunks: Record<string, Proverb[]> = {};
@@ -87,7 +88,7 @@ async function fetchLibrary(): Promise<Library> {
     }),
   );
   writeCache({ version: meta.version, topics: meta.topics, chunks });
-  return build(meta.version, meta.topics, chunks, meta.chunks);
+  return build(meta.version, meta.topics, chunks, meta.chunks, meta.seedVersion);
 }
 
 /** Загружает (или перезагружает после правок в админке) мақалы и темы. */
@@ -117,6 +118,7 @@ export function useLibrary() {
     proverbs: s.library?.proverbs ?? EMPTY,
     topics: s.library?.topics ?? NO_TOPICS,
     version: s.library?.version ?? 0,
+    seedVersion: s.library?.seedVersion ?? 0,
     chunks: s.library?.chunks ?? NO_CHUNKS,
     loading: s.loading && !s.library,
     error: s.error && !s.library,

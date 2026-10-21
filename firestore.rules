@@ -40,11 +40,18 @@ service cloud.firestore {
     // Занятые имена (чтобы имя не досталось двоим)
     match /usernames/{name} {
       allow read: if true;
-      allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(['uid'])
-        && request.resource.data.uid == request.auth.uid;
+      allow create: if request.resource.data.keys().hasOnly(['uid'])
+        && (isAdmin() || (signedIn() && request.resource.data.uid == request.auth.uid));
       allow update: if false;
       allow delete: if isAdmin();
+    }
+
+    // Email и время последнего входа: видят только сам ученик и админ
+    match /private/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if isAdmin()
+        || (signedIn() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['email', 'lastLogin']));
     }
 
     // Публичный профиль: имя и очки видны в рейтинге
@@ -63,11 +70,11 @@ service cloud.firestore {
         && request.resource.data.points == 0
         && request.resource.data.get('bonus', 0) == 0
         && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username.lower())).data.uid == uid;
-      // Сам ученик пересчитывает очки, но не может менять имя и бонус
+      // Сам ученик пересчитывает очки, но не может менять имя и бонус; админ может всё
       allow update: if validProfile()
-        && request.resource.data.username == resource.data.username
         && (isAdmin()
           || (signedIn() && request.auth.uid == uid
+            && request.resource.data.username == resource.data.username
             && request.resource.data.get('bonus', 0) == resource.data.get('bonus', 0)));
       allow delete: if isAdmin();
     }

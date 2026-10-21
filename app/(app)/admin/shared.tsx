@@ -1,14 +1,26 @@
 "use client";
 
+import { FirebaseError } from "firebase/app";
 import { useState, type ReactNode } from "react";
 import type { useLibrary } from "@/lib/proverbs";
+import { ShownError } from "@/lib/usersAdmin";
 
 export type LibraryState = ReturnType<typeof useLibrary>;
 
 export type Status = { kind: "ok" | "error"; text: string } | null;
 
-/** Ошибка, текст которой можно показать админу как есть. */
-export class ShownError extends Error {}
+export { ShownError };
+
+function errorText(e: unknown) {
+  if (e instanceof ShownError) return e.message;
+  const code = e instanceof FirebaseError ? e.code : "";
+  if (code.endsWith("permission-denied")) {
+    return "Firestore ережелері рұқсат бермеді. Firebase Console → Firestore → Rules бөліміне жобадағы жаңа firestore.rules файлын қойып, Publish басыңыз.";
+  }
+  if (code.endsWith("unavailable") || code.endsWith("network-request-failed")) return "Интернет байланысын тексеріңіз.";
+  if (code) return `Қате: ${code}`;
+  return "Сақтау мүмкін болмады. Интернетті және әкімші құқығын тексеріңіз.";
+}
 
 /** Выполняет запись в базу и показывает результат одной строкой. */
 export function useAction() {
@@ -23,8 +35,7 @@ export function useAction() {
       setStatus({ kind: "ok", text: success });
       return true;
     } catch (e) {
-      const text = e instanceof ShownError ? e.message : "Сақтау мүмкін болмады. Интернетті және әкімші құқығын тексеріңіз.";
-      setStatus({ kind: "error", text });
+      setStatus({ kind: "error", text: errorText(e) });
       return false;
     } finally {
       setBusy(false);

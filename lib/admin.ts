@@ -86,7 +86,13 @@ export function deleteProverb(chunk: string, id: string) {
  * Записывает весь список мақалов заново, пачками по CHUNK_SIZE.
  * Используется импортом JSON: и для «добавить», и для «заменить всё».
  */
-export async function replaceAllProverbs(proverbs: Proverb[], topics: Topic[], oldChunks: string[], version: number) {
+export async function replaceAllProverbs(
+  proverbs: Proverb[],
+  topics: Topic[],
+  oldChunks: string[],
+  version: number,
+  seedVersion = 0,
+) {
   const chunkIds: string[] = [];
   const batch = writeBatch(db());
   for (let i = 0; i < proverbs.length; i += CHUNK_SIZE) {
@@ -95,7 +101,7 @@ export async function replaceAllProverbs(proverbs: Proverb[], topics: Topic[], o
     batch.set(chunkRef(id), { items: proverbs.slice(i, i + CHUNK_SIZE) });
   }
   oldChunks.forEach((id) => batch.delete(chunkRef(id)));
-  const meta: LibraryMeta = { version: version + 1, chunks: chunkIds, topics };
+  const meta: LibraryMeta = { version: version + 1, chunks: chunkIds, topics, seedVersion };
   batch.set(metaRef(), meta);
   await batch.commit();
   await afterWrite();
@@ -163,4 +169,49 @@ export function prepareImport(
     }
   }
   return { proverbs: [...base, ...added], added: added.length, topics: nextTopics, newTopics: nextTopics.length - topics.length };
+}
+
+/**
+ * Доливает в базу мақалы из data/proverbs.json: недостающие добавляет, а у уже существующих
+ * заполняет пустые толкование и перевод. Правки админа не трогает. Вызывается один раз на версию.
+ */
+export async function syncSeed(
+  seed: Proverb[],
+  seedTopics: Topic[],
+  current: { proverbs: Proverb[]; topics: Topic[]; chunks: string[]; version: number },
+  seedVersion: number,
+) {
+  const byText = new Map(current.proverbs.map((p) => [textKey(p.text), p]));
+  const merged: Proverb[] = current.proverbs.map(({ id, text, translation_ru, topic, explanation }) => {
+    const s = seed.find((x) => x.id === id) ?? null;
+    return {
+      id,
+      text,
+      topic,
+      explanation: explanation || s?.explanation || "",
+      translation_ru: translation_ru || s?.translation_ru || "",
+    };
+  });
+  const index = new Map(merged.map((p, i) => [textKey(p.text), i]));
+  const used = new Set(merged.map((p) => p.id));
+  let added = 0;
+  for (const s of seed) {
+    const k = textKey(s.text);
+    const at = index.get(k);
+    if (at !== undefined) {
+      const p = merged[at];
+      merged[at] = { ...p, explanation: p.explanation || s.explanation, translation_ru: p.translation_ru || s.translation_ru };
+      continue;
+    }
+    if (byText.has(k)) continue;
+    const id = used.has(s.id) ? newId() : s.id;
+    used.add(id);
+    index.set(k, merged.length);
+    merged.push({ ...s, id });
+    added++;
+  }
+  const topics = [...current.topics];
+  for (const t of seedTopics) if (!topics.some((x) => x.id === t.id)) topics.push(t);
+  await replaceAllProverbs(merged, topics, current.chunks, current.version, seedVersion);
+  return added;
 }

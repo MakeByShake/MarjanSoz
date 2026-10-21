@@ -6,3 +6,6 @@ import type { Topic } from "./types";
  * Используются кнопкой «Бастапқы деректер» в админке (Импорт).
  */
 export const SEED_TOPICS: Topic[] = topics;
+
+/** Увеличьте, когда обновили data/proverbs.json: админка сама дольёт изменения в базу. */
+export const SEED_VERSION = 1;

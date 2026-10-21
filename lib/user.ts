@@ -22,6 +22,7 @@ import {
   orderBy,
   query,
   runTransaction,
+  setDoc,
 } from "firebase/firestore";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { app as firebaseApp, auth, db } from "./firebase";
@@ -50,6 +51,13 @@ function start() {
     const isAdmin = await getDoc(doc(db(), "admins", authUser.uid))
       .then((s) => s.exists())
       .catch(() => false);
+
+    // Email и время входа хранятся отдельно от публичного профиля: их видят только сам ученик и админ
+    setDoc(
+      doc(db(), "private", authUser.uid),
+      { email: authUser.email ?? "", lastLogin: new Date().toISOString() },
+      { merge: true },
+    ).catch(() => {});
 
     stopProfile = onSnapshot(
       doc(db(), "users", authUser.uid),
@@ -175,6 +183,7 @@ export async function register(
       };
       tx.set(doc(store, "users", uid), profile);
     });
+    await setDoc(doc(store, "private", uid), { email, lastLogin: "" }).catch(() => {});
     return { ok: true };
   } catch (e) {
     await deleteUser(cred.user).catch(() => {});

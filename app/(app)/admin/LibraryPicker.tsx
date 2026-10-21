@@ -1,12 +1,13 @@
 "use client";
 
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { Pagination } from "@/components/Pagination";
 import { normalize, type IndexedProverb } from "@/lib/proverbs";
 import type { BalamaWord, Topic } from "@/lib/types";
 
 export type Picked = { kind: "proverb"; item: IndexedProverb } | { kind: "balama"; item: BalamaWord };
 
-const LIMIT = 50;
+const PAGE_SIZE = 20;
 
 /**
  * Окно выбора из библиотеки мақалов или балама сөздер.
@@ -37,6 +38,7 @@ export function LibraryPicker({
   const [kind, setKind] = useState<Picked["kind"]>(kinds[0]);
   const [query, setQuery] = useState("");
   const [topic, setTopic] = useState("all");
+  const [page, setPage] = useState(1);
   const deferred = useDeferredValue(query);
 
   useEffect(() => {
@@ -46,13 +48,21 @@ export function LibraryPicker({
     if (!open && d.open) d.close();
   }, [open]);
 
-  const list = useMemo(() => {
+  const all = useMemo(() => {
     const q = normalize(deferred);
     if (kind === "proverb") {
-      return proverbs.filter((p) => (topic === "all" || p.topic === topic) && (!q || p.search.includes(q))).slice(0, LIMIT);
+      return proverbs.filter((p) => (topic === "all" || p.topic === topic) && (!q || p.search.includes(q)));
     }
-    return balama.filter((w) => !q || normalize(`${w.text} ${w.definition}`).includes(q)).slice(0, LIMIT);
+    return balama.filter((w) => !q || normalize(`${w.text} ${w.definition}`).includes(q));
   }, [kind, proverbs, balama, deferred, topic]);
+  const counts = useMemo(() => {
+    const c = new Map<string, number>();
+    proverbs.forEach((p) => c.set(p.topic, (c.get(p.topic) ?? 0) + 1));
+    return c;
+  }, [proverbs]);
+  const pages = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
+  const current = Math.min(page, pages);
+  const list = all.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
 
   return (
     <dialog
@@ -73,7 +83,10 @@ export function LibraryPicker({
               <button
                 key={k}
                 type="button"
-                onClick={() => setKind(k)}
+                onClick={() => {
+                  setKind(k);
+                  setPage(1);
+                }}
                 aria-pressed={kind === k}
                 className={`rounded-full border px-4 py-1.5 text-sm font-medium ${
                   kind === k ? "border-primary bg-primary text-white dark:border-gold dark:bg-gold dark:text-bg" : "border-line"
@@ -89,17 +102,23 @@ export function LibraryPicker({
             type="search"
             autoFocus
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
+            }}
             placeholder="Іздеу..."
             aria-label="Іздеу"
             className="field"
           />
           {kind === "proverb" && (
-            <select value={topic} onChange={(e) => setTopic(e.target.value)} aria-label="Тақырып" className="field sm:w-56">
+            <select value={topic} onChange={(e) => {
+                setTopic(e.target.value);
+                setPage(1);
+              }} aria-label="Тақырып" className="field sm:w-56">
               <option value="all">Барлық тақырыптар</option>
               {topics.map((t) => (
                 <option key={t.id} value={t.id}>
-                  {t.title}
+                  {t.icon} {t.title} ({counts.get(t.id) ?? 0})
                 </option>
               ))}
             </select>
@@ -133,6 +152,10 @@ export function LibraryPicker({
         })}
         {list.length === 0 && <li className="p-8 text-center text-muted">Ештеңе табылмады</li>}
       </ul>
+      <div className="border-t border-line px-4 pb-4">
+        <p className="mt-3 text-center text-xs text-muted">{all.length} табылды</p>
+        <Pagination page={current} pages={pages} onPage={setPage} />
+      </div>
       {multiple && (
         <div className="border-t border-line p-4 text-right">
           <button type="button" className="btn-primary" onClick={onClose}>

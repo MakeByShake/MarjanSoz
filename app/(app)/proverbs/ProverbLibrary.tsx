@@ -1,17 +1,17 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
+import { Pagination } from "@/components/Pagination";
 import { LoadError, Loading } from "@/components/ui";
 import { normalize, topicMeta, useLibrary } from "@/lib/proverbs";
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 20;
 
 export function ProverbLibrary() {
   const { proverbs, topics, loading, error } = useLibrary();
   const [query, setQuery] = useState("");
   const [topic, setTopic] = useState("all");
-  const [limit, setLimit] = useState(PAGE_SIZE);
-  const sentinel = useRef<HTMLDivElement>(null);
+  const [page, setPage] = useState(1);
 
   // Поиск не блокирует ввод даже на тысячах мақалов
   const deferredQuery = useDeferredValue(query);
@@ -22,20 +22,18 @@ export function ProverbLibrary() {
     return proverbs.filter((p) => (topic === "all" || p.topic === topic) && (!q || p.search.includes(q)));
   }, [proverbs, deferredQuery, topic]);
 
-  const visible = filtered.slice(0, limit);
-  const hasMore = visible.length < filtered.length;
-
-  // Бесконечный скролл: подгружаем следующую порцию, когда низ списка виден
-  useEffect(() => {
-    const el = sentinel.current;
-    if (!el || !hasMore) return;
-    const observer = new IntersectionObserver(
-      (entries) => entries[0].isIntersecting && setLimit((l) => l + PAGE_SIZE),
-      { rootMargin: "400px" },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [hasMore]);
+  const counts = useMemo(() => {
+    const c = new Map<string, number>();
+    proverbs.forEach((p) => c.set(p.topic, (c.get(p.topic) ?? 0) + 1));
+    return c;
+  }, [proverbs]);
+  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const current = Math.min(page, pages);
+  const visible = filtered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
+  const goTo = (n: number) => {
+    setPage(n);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   if (error) return <LoadError />;
   if (loading) return <Loading />;
@@ -54,7 +52,7 @@ export function ProverbLibrary() {
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
-              setLimit(PAGE_SIZE);
+              setPage(1);
             }}
             placeholder="Мақал іздеу..."
             className="field"
@@ -66,14 +64,14 @@ export function ProverbLibrary() {
             value={topic}
             onChange={(e) => {
               setTopic(e.target.value);
-              setLimit(PAGE_SIZE);
+              setPage(1);
             }}
             className="field"
           >
             <option value="all">Барлық тақырыптар</option>
             {topics.map((t) => (
               <option key={t.id} value={t.id}>
-                {t.title}
+                {t.icon} {t.title} ({counts.get(t.id) ?? 0})
               </option>
             ))}
           </select>
@@ -81,7 +79,7 @@ export function ProverbLibrary() {
       </form>
 
       <p aria-live="polite" className="mb-4 text-sm text-muted">
-        {filtered.length} мақал табылды
+        {filtered.length} мақал табылды{pages > 1 ? ` · ${current}/${pages} бет` : ""}
       </p>
 
       {filtered.length === 0 ? (
@@ -95,7 +93,7 @@ export function ProverbLibrary() {
                 className="flex flex-col rounded-2xl border border-line border-l-4 border-l-gold bg-card p-5 shadow-sm [content-visibility:auto] [contain-intrinsic-size:auto_220px]"
               >
                 <p className="font-serif text-lg italic text-proverb">«{p.text}»</p>
-                <p className="mt-2 flex-1">{p.explanation}</p>
+                <p className="mt-2 flex-1">{p.explanation || <span className="text-muted">Түсіндірмесі әлі қосылмаған.</span>}</p>
                 {p.translation_ru && (
                   <p lang="ru" className="mt-2 text-sm text-muted">
                     {p.translation_ru}
@@ -112,13 +110,7 @@ export function ProverbLibrary() {
         </ul>
       )}
 
-      {hasMore && (
-        <div ref={sentinel} className="mt-8 text-center">
-          <button type="button" className="btn-secondary" onClick={() => setLimit((l) => l + PAGE_SIZE)}>
-            Тағы көрсету ({filtered.length - visible.length})
-          </button>
-        </div>
-      )}
+      <Pagination page={current} pages={pages} onPage={goTo} />
     </div>
   );
 }

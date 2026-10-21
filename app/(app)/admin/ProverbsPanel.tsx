@@ -2,12 +2,13 @@
 
 import { useDeferredValue, useMemo, useState, type FormEvent } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { Pagination } from "@/components/Pagination";
 import { addProverb, deleteProverb, updateProverb, type ProverbInput } from "@/lib/admin";
 import { normalize, topicMeta, type IndexedProverb } from "@/lib/proverbs";
 import type { Topic } from "@/lib/types";
 import { Panel, StatusLine, TextField, useAction, type LibraryState } from "./shared";
 
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 20;
 
 export function ProverbsPanel({ library }: { library: LibraryState }) {
   const { proverbs, topics } = library;
@@ -17,15 +18,22 @@ export function ProverbsPanel({ library }: { library: LibraryState }) {
   const [deleting, setDeleting] = useState<IndexedProverb | null>(null);
   const [query, setQuery] = useState("");
   const [topic, setTopic] = useState("all");
-  const [limit, setLimit] = useState(PAGE_SIZE);
+  const [page, setPage] = useState(1);
   const deferred = useDeferredValue(query);
 
-  // Новые сверху: админ сразу видит то, что добавил
   const filtered = useMemo(() => {
     const q = normalize(deferred);
-    return proverbs.filter((p) => (topic === "all" || p.topic === topic) && (!q || p.search.includes(q))).reverse();
+    return proverbs.filter((p) => (topic === "all" || p.topic === topic) && (!q || p.search.includes(q)));
   }, [proverbs, deferred, topic]);
-  const visible = filtered.slice(0, limit);
+  const counts = useMemo(() => {
+    const c = new Map<string, number>();
+    proverbs.forEach((p) => c.set(p.topic, (c.get(p.topic) ?? 0) + 1));
+    return c;
+  }, [proverbs]);
+  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const current = Math.min(page, pages);
+  const visible = filtered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
+  const explained = proverbs.filter((p) => p.explanation.trim()).length;
 
   if (topics.length === 0) {
     return (
@@ -65,6 +73,9 @@ export function ProverbsPanel({ library }: { library: LibraryState }) {
       </Panel>
 
       <Panel title={`Барлық мақалдар (${filtered.length})`}>
+        <p className="mb-3 text-sm text-muted">
+          Түсіндірмесі бар: {explained} / {proverbs.length}. Бет: {current} / {pages}.
+        </p>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row">
           <label className="flex-1">
             <span className="sr-only">Мақал іздеу</span>
@@ -73,7 +84,7 @@ export function ProverbsPanel({ library }: { library: LibraryState }) {
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
-                setLimit(PAGE_SIZE);
+                setPage(1);
               }}
               placeholder="Мақал іздеу..."
               className="field"
@@ -85,14 +96,14 @@ export function ProverbsPanel({ library }: { library: LibraryState }) {
               value={topic}
               onChange={(e) => {
                 setTopic(e.target.value);
-                setLimit(PAGE_SIZE);
+                setPage(1);
               }}
               className="field"
             >
               <option value="all">Барлық тақырыптар</option>
               {topics.map((t) => (
                 <option key={t.id} value={t.id}>
-                  {t.title}
+                  {t.icon} {t.title} ({counts.get(t.id) ?? 0})
                 </option>
               ))}
             </select>
@@ -140,13 +151,7 @@ export function ProverbsPanel({ library }: { library: LibraryState }) {
           ))}
         </ul>
         {filtered.length === 0 && <p className="py-8 text-center text-muted">Ештеңе табылмады.</p>}
-        {visible.length < filtered.length && (
-          <div className="mt-4 text-center">
-            <button type="button" className="btn-secondary" onClick={() => setLimit((l) => l + PAGE_SIZE)}>
-              Тағы көрсету ({filtered.length - visible.length})
-            </button>
-          </div>
-        )}
+        <Pagination page={current} pages={pages} onPage={setPage} />
       </Panel>
 
       <ConfirmDialog
