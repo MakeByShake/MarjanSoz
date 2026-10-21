@@ -3,12 +3,10 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { LoadError, Loading } from "@/components/ui";
 import { normalize, topicMeta, useLibrary } from "@/lib/proverbs";
-import { useCurrentUser } from "@/lib/user";
 
 const PAGE_SIZE = 24;
 
 export function ProverbLibrary() {
-  const user = useCurrentUser();
   const { proverbs, topics, loading, error } = useLibrary();
   const [query, setQuery] = useState("");
   const [topic, setTopic] = useState("all");
@@ -18,7 +16,6 @@ export function ProverbLibrary() {
   // Поиск не блокирует ввод даже на тысячах мақалов
   const deferredQuery = useDeferredValue(query);
 
-  const learned = useMemo(() => new Set(user?.completedProverbs), [user]);
 
   const filtered = useMemo(() => {
     const q = normalize(deferredQuery);
@@ -92,7 +89,6 @@ export function ProverbLibrary() {
       ) : (
         <ul className="grid gap-4 md:grid-cols-2">
           {visible.map((p) => {
-            const isLearned = learned.has(p.id);
             return (
               <li
                 key={p.id}
@@ -105,12 +101,9 @@ export function ProverbLibrary() {
                     {p.translation_ru}
                   </p>
                 )}
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm">
+                <div className="mt-4 text-sm">
                   <span className="rounded-full bg-primary/10 px-3 py-1 font-medium text-primary-dark dark:bg-gold/15 dark:text-gold">
                     {topicMeta(topics, p.topic).title}
-                  </span>
-                  <span className={isLearned ? "font-medium text-primary dark:text-gold" : "text-muted"}>
-                    {isLearned ? "✅ Үйрендім" : "📚 Үйрену керек"}
                   </span>
                 </div>
               </li>

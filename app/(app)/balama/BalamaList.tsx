@@ -1,10 +1,11 @@
 "use client";
 
 import { useDeferredValue, useMemo, useState } from "react";
+import { useBalama } from "@/lib/balama";
 import { normalize } from "@/lib/proverbs";
-import type { BalamaWord } from "@/lib/types";
 
-export function BalamaList({ words }: { words: BalamaWord[] }) {
+export function BalamaList() {
+  const { words } = useBalama();
   const [query, setQuery] = useState("");
   const deferred = useDeferredValue(query);
 

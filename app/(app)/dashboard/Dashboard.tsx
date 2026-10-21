@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Divider, OrnateCard } from "@/components/Ornament";
 import { LoadError, ProgressBar } from "@/components/ui";
+import { useLessons, useMyResults } from "@/lib/lessons";
 import { proverbOfTheDay, useLibrary } from "@/lib/proverbs";
 import { useCurrentUser } from "@/lib/user";
 
@@ -18,10 +19,10 @@ export function Dashboard() {
   const { proverbs, loading, error } = useLibrary();
   const daily = proverbOfTheDay(proverbs);
 
-  // Единый источник правды: всего мақалов = длина массива данных
-  const total = proverbs.length;
-  const ids = new Set(proverbs.map((p) => p.id));
-  const completed = user ? user.completedProverbs.filter((id) => ids.has(id)).length : 0;
+  const lessons = useLessons(false);
+  const results = useMyResults(user?.id);
+  const total = lessons.data?.length ?? 0;
+  const completed = (lessons.data ?? []).filter((l) => results.data?.get(l.id)?.completed).length;
   const percent = total ? (completed / total) * 100 : 0;
 
   return (
@@ -60,11 +61,9 @@ export function Dashboard() {
         </h3>
         <ProgressBar value={percent} label="Жалпы прогресс" large />
         <p className="mt-3 font-medium">
-          {completed}/{total} мақал ({Math.round(percent)}%)
+          {completed}/{total} сабақ аяқталды ({Math.round(percent)}%)
         </p>
-        <p className="text-sm text-muted">
-          {completed} үйрендіңіз, {Math.max(0, total - completed)} үйрену керек
-        </p>
+        <p className="text-sm text-muted">{user?.points ?? 0} ұпай жиналды</p>
       </section>
 
       <section aria-label="Жылдам әрекеттер" className="grid gap-5 sm:grid-cols-2">

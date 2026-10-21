@@ -43,7 +43,7 @@ export function ImportPanel({ library }: { library: LibraryState }) {
     const next = prepareImport(rows, proverbs, topics, mode);
     const ok = await run(
       () => replaceAllProverbs(next.proverbs, next.topics, chunks, version),
-      `${rows.length} мақал жүктелді${next.newTopics ? `, ${next.newTopics} жаңа сабақ құрылды` : ""}`,
+      `${rows.length} мақал жүктелді${next.newTopics ? `, ${next.newTopics} жаңа тақырып құрылды` : ""}`,
     );
     if (ok) setRows(null);
   }
@@ -53,7 +53,7 @@ export function ImportPanel({ library }: { library: LibraryState }) {
       {proverbs.length === 0 && (
         <Panel title="Бастапқы деректер">
           <p className="mb-4 text-muted">
-            База әзірге бос. Сайттағы 20 мақал мен {SEED_TOPICS.length} сабақты бір басумен жүктеуге болады.
+            База әзірге бос. Сайттағы 20 мақал мен {SEED_TOPICS.length} тақырыпты бір басумен жүктеуге болады.
           </p>
           <button
             type="button"
@@ -80,7 +80,7 @@ export function ImportPanel({ library }: { library: LibraryState }) {
       <Panel title="JSON файлдан импорттау">
         <p className="mb-3 text-sm text-muted">
           Көп мақалды бірден қосу үшін. Әр мақалда <code>text</code>, <code>explanation</code>, <code>topic</code> міндетті,{" "}
-          <code>translation_ru</code> міндетті емес. Жоқ сабақтар (topic) өздігінен құрылады, кейін оларды «Сабақтар» бөлімінде
+          <code>translation_ru</code> міндетті емес. Жоқ тақырыптар (topic) өздігінен құрылады, кейін оларды «Тақырыптар» бөлімінде
           өңдей аласыз.
         </p>
         <details className="mb-4 text-sm">

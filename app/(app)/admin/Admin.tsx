@@ -2,15 +2,24 @@
 
 import { useState } from "react";
 import { Loading, PageHeader } from "@/components/ui";
+import { useBalama } from "@/lib/balama";
 import { useLibrary } from "@/lib/proverbs";
 import { useCurrentUser } from "@/lib/user";
+import { BalamaPanel } from "./BalamaPanel";
 import { ImportPanel } from "./ImportPanel";
+import { LessonsPanel } from "./LessonsPanel";
 import { ProverbsPanel } from "./ProverbsPanel";
+import { RatingPanel } from "./RatingPanel";
 import { TopicsPanel } from "./TopicsPanel";
+import { UsersPanel } from "./UsersPanel";
 
 const TABS = [
   { id: "proverbs", label: "📜 Мақалдар" },
-  { id: "topics", label: "📚 Сабақтар" },
+  { id: "topics", label: "🏷️ Тақырыптар" },
+  { id: "lessons", label: "📚 Сабақтар" },
+  { id: "balama", label: "🎭 Балама сөздер" },
+  { id: "users", label: "👥 Пайдаланушылар" },
+  { id: "rating", label: "🏆 Рейтинг" },
   { id: "import", label: "📥 Импорт" },
 ] as const;
 
@@ -19,7 +28,8 @@ type Tab = (typeof TABS)[number]["id"];
 export function Admin() {
   const user = useCurrentUser();
   const library = useLibrary();
-  const [tab, setTab] = useState<Tab>("proverbs");
+  const balama = useBalama();
+  const [tab, setTab] = useState<Tab>("lessons");
 
   if (!user) return <Loading />;
   if (!user.isAdmin) {
@@ -38,7 +48,7 @@ export function Admin() {
     <>
       <PageHeader
         title="Әкімші панелі"
-        subtitle={`${library.proverbs.length} мақал · ${library.topics.length} сабақ`}
+        subtitle={`${library.proverbs.length} мақал · ${library.topics.length} тақырып · ${balama.words.length} балама сөз`}
       />
       <div role="tablist" aria-label="Әкімші бөлімдері" className="mb-6 flex flex-wrap justify-center gap-2">
         {TABS.map((t) => (
@@ -71,6 +81,14 @@ export function Admin() {
           <ProverbsPanel library={library} />
         ) : tab === "topics" ? (
           <TopicsPanel library={library} />
+        ) : tab === "lessons" ? (
+          <LessonsPanel libs={{ proverbs: library.proverbs, topics: library.topics, balama: balama.words }} />
+        ) : tab === "balama" ? (
+          <BalamaPanel />
+        ) : tab === "users" ? (
+          <UsersPanel />
+        ) : tab === "rating" ? (
+          <RatingPanel />
         ) : (
           <ImportPanel library={library} />
         )}

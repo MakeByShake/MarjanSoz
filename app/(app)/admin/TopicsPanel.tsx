@@ -6,7 +6,7 @@ import { deleteTopic, saveTopic } from "@/lib/admin";
 import type { Topic } from "@/lib/types";
 import { Panel, StatusLine, TextField, useAction, type LibraryState } from "./shared";
 
-// Адрес урока (/lessons/<id>): латиница, цифры и дефис
+// Код темы (поле topic у мақала): латиница, цифры и дефис
 const ID_PATTERN = /^[a-z0-9-]{2,40}$/;
 
 export function TopicsPanel({ library }: { library: LibraryState }) {
@@ -23,11 +23,11 @@ export function TopicsPanel({ library }: { library: LibraryState }) {
   return (
     <div className="space-y-6">
       <Panel
-        title="Жаңа сабақ"
+        title="Жаңа тақырып"
         action={
           !adding && (
             <button type="button" className="btn-primary" onClick={() => setAdding(true)}>
-              ＋ Сабақ қосу
+              ＋ Тақырып қосу
             </button>
           )
         }
@@ -40,17 +40,17 @@ export function TopicsPanel({ library }: { library: LibraryState }) {
             initial={{ id: "", title: "", description: "", icon: "📜", order: nextOrder }}
             onCancel={() => setAdding(false)}
             onSubmit={async (t) => {
-              if (await run(() => saveTopic(t), "Сабақ қосылды")) setAdding(false);
+              if (await run(() => saveTopic(t), "Тақырып қосылды")) setAdding(false);
             }}
           />
         ) : (
-          <p className="text-sm text-muted">Сабақ = мақалдар тақырыбы. Сабақ жасағаннан кейін оған «Мақалдар» бөлімінде мақал қосыңыз.</p>
+          <p className="text-sm text-muted">Тақырып = кітапханадағы мақалдар санаты (сүзгі). Сабақтар «Сабақтар» бөлімінде бөлек жасалады.</p>
         )}
         <StatusLine status={status} />
       </Panel>
 
-      <Panel title={`Сабақтар (${topics.length})`}>
-        {topics.length === 0 && <p className="text-muted">Сабақтар әлі жоқ.</p>}
+      <Panel title={`Тақырыптар (${topics.length})`}>
+        {topics.length === 0 && <p className="text-muted">Тақырыптар әлі жоқ.</p>}
         <ul className="divide-y divide-line">
           {topics.map((t) => {
             const count = counts.get(t.id) ?? 0;
@@ -63,7 +63,7 @@ export function TopicsPanel({ library }: { library: LibraryState }) {
                     initial={t}
                     onCancel={() => setEditing(null)}
                     onSubmit={async (next) => {
-                      if (await run(() => saveTopic(next), "Сабақ сақталды")) setEditing(null);
+                      if (await run(() => saveTopic(next), "Тақырып сақталды")) setEditing(null);
                     }}
                   />
                 ) : (
@@ -76,8 +76,7 @@ export function TopicsPanel({ library }: { library: LibraryState }) {
                         {t.title} <span className="text-sm font-normal text-muted">· {count} мақал · №{t.order}</span>
                       </p>
                       <p className="text-sm text-muted">{t.description}</p>
-                      <p className="text-xs text-muted">/lessons/{t.id}</p>
-                    </div>
+                                          </div>
                     <div className="flex shrink-0 gap-2">
                       <button type="button" className="btn-secondary min-h-9 px-3 py-1 text-sm" onClick={() => setEditing(t.id)}>
                         Өңдеу
@@ -85,7 +84,7 @@ export function TopicsPanel({ library }: { library: LibraryState }) {
                       <button
                         type="button"
                         disabled={count > 0}
-                        title={count > 0 ? "Алдымен осы сабақтың мақалдарын жойыңыз немесе басқа сабаққа ауыстырыңыз" : undefined}
+                        title={count > 0 ? "Алдымен осы тақырыптың мақалдарын жойыңыз немесе басқа тақырыпқа ауыстырыңыз" : undefined}
                         className="inline-flex min-h-9 items-center rounded-lg border border-red-700/50 px-3 py-1 text-sm text-red-800 transition hover:bg-red-700/10 disabled:cursor-not-allowed disabled:opacity-40 dark:text-red-200"
                         onClick={() => setDeleting(t)}
                       >
@@ -98,16 +97,16 @@ export function TopicsPanel({ library }: { library: LibraryState }) {
             );
           })}
         </ul>
-        <p className="mt-2 text-xs text-muted">Ішінде мақалы бар сабақты жоюға болмайды.</p>
+        <p className="mt-2 text-xs text-muted">Ішінде мақалы бар тақырыпты жоюға болмайды.</p>
       </Panel>
 
       <ConfirmDialog
         open={deleting !== null}
-        title={deleting ? `«${deleting.title}» сабағын жоясыз ба?` : ""}
+        title={deleting ? `«${deleting.title}» тақырыбын жоясыз ба?` : ""}
         confirmLabel="Жою"
         onClose={() => setDeleting(null)}
         onConfirm={() => {
-          if (deleting) run(() => deleteTopic(deleting.id), "Сабақ жойылды");
+          if (deleting) run(() => deleteTopic(deleting.id), "Тақырып жойылды");
         }}
       />
     </div>
@@ -137,8 +136,8 @@ function TopicForm({
     e.preventDefault();
     const next = { ...t, id: t.id.trim(), title: t.title.trim(), description: t.description.trim(), icon: t.icon.trim() || "📜" };
     if (!next.title) return setError("Атауын жазыңыз");
-    if (isNew && !ID_PATTERN.test(next.id)) return setError("Сілтеме: тек кіші латын әріптері, сандар және «-» (мысалы: dostyk)");
-    if (isNew && existingIds.includes(next.id)) return setError("Мұндай сілтемесі бар сабақ бар");
+    if (isNew && !ID_PATTERN.test(next.id)) return setError("Коды: тек кіші латын әріптері, сандар және «-» (мысалы: dostyk)");
+    if (isNew && existingIds.includes(next.id)) return setError("Мұндай коды бар тақырып бар");
     setError("");
     onSubmit(next);
   }
@@ -149,11 +148,11 @@ function TopicForm({
       <TextField label="Сипаттамасы" value={t.description} onChange={set("description")} placeholder="Достық туралы мақалдар" />
       <div className="grid gap-3 sm:grid-cols-3">
         {isNew ? (
-          <TextField label="Сілтеме (латынша)" value={t.id} onChange={(v) => set("id")(v.toLowerCase())} required placeholder="dostyk" />
+          <TextField label="Коды (латынша)" value={t.id} onChange={(v) => set("id")(v.toLowerCase())} required placeholder="dostyk" />
         ) : (
           <p className="text-sm">
-            <span className="mb-1 block font-medium">Сілтеме</span>
-            <span className="text-muted">/lessons/{t.id}</span>
+            <span className="mb-1 block font-medium">Коды</span>
+            <span className="text-muted">{t.id}</span>
           </p>
         )}
         <TextField label="Белгіше (эмодзи)" value={t.icon} onChange={set("icon")} />

@@ -7,6 +7,9 @@ export type LibraryState = ReturnType<typeof useLibrary>;
 
 export type Status = { kind: "ok" | "error"; text: string } | null;
 
+/** Ошибка, текст которой можно показать админу как есть. */
+export class ShownError extends Error {}
+
 /** Выполняет запись в базу и показывает результат одной строкой. */
 export function useAction() {
   const [busy, setBusy] = useState(false);
@@ -19,8 +22,9 @@ export function useAction() {
       await action();
       setStatus({ kind: "ok", text: success });
       return true;
-    } catch {
-      setStatus({ kind: "error", text: "Сақтау мүмкін болмады. Интернетті және әкімші құқығын тексеріңіз." });
+    } catch (e) {
+      const text = e instanceof ShownError ? e.message : "Сақтау мүмкін болмады. Интернетті және әкімші құқығын тексеріңіз.";
+      setStatus({ kind: "error", text });
       return false;
     } finally {
       setBusy(false);
@@ -104,3 +108,50 @@ export function TextField({
     </label>
   );
 }
+
+export function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <label className="inline-flex cursor-pointer items-center gap-2 text-sm">
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="peer sr-only" />
+      <span
+        aria-hidden="true"
+        className="relative h-6 w-11 shrink-0 rounded-full bg-track transition peer-checked:bg-success peer-focus-visible:outline-3 peer-focus-visible:outline-gold after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5"
+      />
+      {label}
+    </label>
+  );
+}
+
+export function NumberField({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+  className = "",
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  min?: number;
+  max?: number;
+  className?: string;
+}) {
+  return (
+    <label className={`block ${className}`}>
+      <span className="mb-1 block text-sm font-medium">{label}</span>
+      <input
+        type="number"
+        min={min}
+        max={max}
+        value={Number.isFinite(value) ? value : 0}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="field"
+      />
+    </label>
+  );
+}
+
+export const smallBtn = "btn-secondary min-h-9 px-3 py-1 text-sm";
+export const dangerBtn =
+  "inline-flex min-h-9 items-center rounded-lg border border-red-700/50 px-3 py-1 text-sm text-red-800 transition hover:bg-red-700/10 disabled:cursor-not-allowed disabled:opacity-40 dark:text-red-200";

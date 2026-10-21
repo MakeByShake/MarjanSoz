@@ -1,6 +1,6 @@
 "use client";
 
-import { FirebaseError } from "firebase/app";
+import { FirebaseError, type FirebaseApp } from "firebase/app";
 import {
   createUserWithEmailAndPassword,
   deleteUser,
@@ -8,6 +8,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
+  getAuth,
   type User as AuthUser,
 } from "firebase/auth";
 import {
@@ -15,19 +16,16 @@ import {
   doc,
   getDoc,
   getDocs,
+  getFirestore,
   limit,
   onSnapshot,
   orderBy,
   query,
   runTransaction,
-  updateDoc,
 } from "firebase/firestore";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { auth, db } from "./firebase";
+import { app as firebaseApp, auth, db } from "./firebase";
 import type { User, UserProfile } from "./types";
-
-/** Очки всегда = выученные мақалы × 10. Это же проверяют правила Firestore. */
-export const POINTS_PER_PROVERB = 10;
 
 // undefined — ещё не известно, null — не вошёл
 let current: User | null | undefined = undefined;
@@ -72,8 +70,7 @@ function toUser(authUser: AuthUser, p: UserProfile, isAdmin: boolean): User {
     isAdmin,
     username: p.username,
     points: p.points ?? 0,
-    completedProverbs: p.completedProverbs ?? [],
-    completedTopics: p.completedTopics ?? [],
+    bonus: p.bonus ?? 0,
     createdAt: p.createdAt ?? "",
   };
 }
@@ -126,12 +123,18 @@ export async function login(email: string, password: string): Promise<AuthResult
 // toLowerCase() совпадает с .lower() в правилах Firestore
 const usernameKey = (name: string) => name.toLowerCase();
 
-export async function register(input: {
-  username: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-}): Promise<AuthResult> {
+export async function register(
+  input: {
+    username: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+  },
+  // Админ создаёт аккаунт через отдельный экземпляр Firebase, чтобы самому не выйти из своего
+  app: FirebaseApp = firebaseApp(),
+): Promise<AuthResult> {
+  const authInstance = getAuth(app);
+  const store = getFirestore(app);
   const { username, email, password, confirmPassword } = input;
   if (!username || !email || !password || !confirmPassword) {
     return { ok: false, error: "Барлық өрістерді толтырыңыз" };
@@ -143,7 +146,7 @@ export async function register(input: {
   if (password.length < 6) return { ok: false, error: "Құпия сөз кемінде 6 таңбадан тұруы керек" };
 
   try {
-    const taken = await getDoc(doc(db(), "usernames", usernameKey(username)));
+    const taken = await getDoc(doc(store, "usernames", usernameKey(username)));
     if (taken.exists()) return { ok: false, error: "Бұл пайдаланушы аты бос емес" };
   } catch {
     return { ok: false, error: "Интернет байланысын тексеріңіз" };
@@ -151,7 +154,7 @@ export async function register(input: {
 
   let cred;
   try {
-    cred = await createUserWithEmailAndPassword(auth(), email, password);
+    cred = await createUserWithEmailAndPassword(authInstance, email, password);
   } catch (e) {
     return { ok: false, error: authError(e) };
   }
@@ -160,18 +163,17 @@ export async function register(input: {
   try {
     await updateProfile(cred.user, { displayName: username });
     // Имя и профиль создаются вместе: имя не может достаться двоим
-    await runTransaction(db(), async (tx) => {
-      const nameRef = doc(db(), "usernames", usernameKey(username));
+    await runTransaction(store, async (tx) => {
+      const nameRef = doc(store, "usernames", usernameKey(username));
       if ((await tx.get(nameRef)).exists()) throw new Error("taken");
       tx.set(nameRef, { uid });
       const profile: UserProfile = {
         username,
         points: 0,
-        completedProverbs: [],
-        completedTopics: [],
+        bonus: 0,
         createdAt: new Date().toISOString(),
       };
-      tx.set(doc(db(), "users", uid), profile);
+      tx.set(doc(store, "users", uid), profile);
     });
     return { ok: true };
   } catch (e) {
@@ -183,34 +185,6 @@ export async function register(input: {
 
 export function logout() {
   return signOut(auth());
-}
-
-async function saveProgress(user: User, completedProverbs: string[], completedTopics: string[]) {
-  await updateDoc(doc(db(), "users", user.id), {
-    completedProverbs,
-    completedTopics,
-    points: completedProverbs.length * POINTS_PER_PROVERB,
-  });
-}
-
-/** Отмечает мақалы выученными. Возвращает, сколько очков добавилось. */
-export async function completeProverbs(user: User, proverbIds: string[], topic: string, topicIds: string[]) {
-  const done = new Set(user.completedProverbs);
-  const fresh = proverbIds.filter((id) => !done.has(id));
-  fresh.forEach((id) => done.add(id));
-  const topics = new Set(user.completedTopics);
-  if (topicIds.every((id) => done.has(id))) topics.add(topic);
-  await saveProgress(user, [...done], [...topics]);
-  return fresh.length * POINTS_PER_PROVERB;
-}
-
-export async function resetTopic(user: User, topic: string, topicIds: string[]) {
-  const ids = new Set(topicIds);
-  await saveProgress(
-    user,
-    user.completedProverbs.filter((id) => !ids.has(id)),
-    user.completedTopics.filter((t) => t !== topic),
-  );
 }
 
 export type RatingRow = { id: string; username: string; points: number };

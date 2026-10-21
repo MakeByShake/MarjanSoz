@@ -8,12 +8,12 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Админ = есть документ admins/{uid}. Создаётся только вручную в консоли.
+    // Админ = есть документ admins/{uid}. Первого админа создают вручную в консоли, остальных — в админке.
     function isAdmin() {
       return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    // Мақалы и темы: читать могут все, менять только админ
+    // Мақалы, темы, балама сөздер (meta/library, meta/balama): читать могут все, менять только админ
     match /meta/{docId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -23,10 +23,18 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Пользователь может только узнать, админ ли он сам
+    // Уроки: опубликованные видят все, черновики только админ
+    match /lessons/{lessonId} {
+      allow read: if resource.data.published == true || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Пользователь может узнать, админ ли он сам; админ видит и меняет список (но не может снять сам себя)
     match /admins/{uid} {
-      allow read: if signedIn() && request.auth.uid == uid;
-      allow write: if false;
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if isAdmin() && request.resource.data.keys().hasOnly(['addedAt', 'by']);
+      allow update: if false;
+      allow delete: if isAdmin() && request.auth.uid != uid;
     }
 
     // Занятые имена (чтобы имя не досталось двоим)
@@ -35,29 +43,55 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.keys().hasOnly(['uid'])
         && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if isAdmin();
     }
 
     // Публичный профиль: имя и очки видны в рейтинге
     match /users/{uid} {
+      // completedProverbs/completedTopics остались от старой версии, новые профили их не пишут
       function validProfile() {
         let d = request.resource.data;
-        return d.keys().hasOnly(['username', 'points', 'completedProverbs', 'completedTopics', 'createdAt'])
-          && d.completedProverbs is list
-          && d.completedTopics is list
-          // Очки нельзя накрутить: они всегда равны выученным мақалам × 10
-          && d.points == d.completedProverbs.size() * 10;
+        return d.keys().hasOnly(['username', 'points', 'bonus', 'createdAt', 'completedProverbs', 'completedTopics'])
+          && d.points is number && d.points >= 0
+          && d.get('bonus', 0) is number;
       }
 
       allow read: if true;
       allow create: if signedIn() && request.auth.uid == uid
         && validProfile()
         && request.resource.data.points == 0
+        && request.resource.data.get('bonus', 0) == 0
         && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.username.lower())).data.uid == uid;
-      allow update: if signedIn() && request.auth.uid == uid
-        && validProfile()
-        && request.resource.data.username == resource.data.username;
-      allow delete: if false;
+      // Сам ученик пересчитывает очки, но не может менять имя и бонус
+      allow update: if validProfile()
+        && request.resource.data.username == resource.data.username
+        && (isAdmin()
+          || (signedIn() && request.auth.uid == uid
+            && request.resource.data.get('bonus', 0) == resource.data.get('bonus', 0)));
+      allow delete: if isAdmin();
+    }
+
+    // Результаты уроков: results/{lessonId}_{uid}. Ручной балл (manual) ставит только админ.
+    match /results/{resultId} {
+      function validResult() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['uid', 'username', 'lessonId', 'tasks', 'score', 'maxScore', 'completed', 'manual', 'updatedAt'])
+          && d.score is number && d.score >= 0
+          && d.maxScore is number && d.score <= d.maxScore
+          && d.tasks is map;
+      }
+      function ownResult() {
+        return signedIn()
+          && request.resource.data.uid == request.auth.uid
+          && resultId == request.resource.data.lessonId + '_' + request.auth.uid
+          && exists(/databases/$(database)/documents/lessons/$(request.resource.data.lessonId));
+      }
+
+      allow read: if true;
+      allow create: if validResult() && (isAdmin() || (ownResult() && request.resource.data.manual == null));
+      allow update: if validResult() && (isAdmin() || (ownResult() && request.resource.data.manual == resource.data.manual));
+      allow delete: if isAdmin();
     }
   }
 }

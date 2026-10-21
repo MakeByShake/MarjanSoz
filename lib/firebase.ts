@@ -16,6 +16,15 @@ const firebaseConfig = {
 };
 
 // Ленивая инициализация: модули импортируются и при серверном рендере, а Firebase нужен только в браузере
-const app = () => (getApps().length ? getApp() : initializeApp(firebaseConfig));
+export const app = () => getApps().find((a) => a.name === "[DEFAULT]") ?? initializeApp(firebaseConfig);
 export const auth = () => getAuth(app());
 export const db = () => getFirestore(app());
+
+/** Второй экземпляр: админ создаёт в нём чужой аккаунт и не выходит из своего. */
+export const secondaryApp = () => {
+  try {
+    return getApp("secondary");
+  } catch {
+    return initializeApp(firebaseConfig, "secondary");
+  }
+};

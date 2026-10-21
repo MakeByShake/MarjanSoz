@@ -2,28 +2,31 @@
 
 import { OrnateCard } from "@/components/Ornament";
 import { Loading, ProgressBar } from "@/components/ui";
-import { useLibrary } from "@/lib/proverbs";
+import { taskPassed, useLessons, useMyResults } from "@/lib/lessons";
 import { levelFor, useCurrentUser } from "@/lib/user";
 
 export function Profile() {
   const user = useCurrentUser();
-  const { proverbs, topics } = useLibrary();
+  const lessons = useLessons(false);
+  const results = useMyResults(user?.id);
 
   if (!user) return <Loading />;
 
-  const total = proverbs.length;
-  const ids = new Set(proverbs.map((p) => p.id));
-  const learned = user.completedProverbs.filter((id) => ids.has(id)).length;
-  const topicsTotal = topics.length;
-  const topicsDone = user.completedTopics.filter((t) => topics.some((x) => x.id === t)).length;
+  const list = lessons.data ?? [];
+  const lessonsTotal = list.length;
+  const lessonsDone = list.filter((l) => results.data?.get(l.id)?.completed).length;
+  const tasksDone = list.reduce(
+    (s, l) => s + l.tasks.filter((t) => taskPassed(l, t.id, results.data?.get(l.id)?.tasks[t.id])).length,
+    0,
+  );
   const points = user.points;
   const level = levelFor(points);
 
   const achievements = [
-    { icon: "🎯", title: "Алғашқы қадам", text: "Алғашқы мақалды үйрену", value: learned, goal: 1 },
-    { icon: "🏆", title: "Мақал шебері", text: "10 мақалды үйрену", value: learned, goal: 10 },
-    { icon: "👑", title: "Ұлы данышпан", text: "Барлық мақалдарды үйрену", value: learned, goal: Math.max(total, 1) },
-    { icon: "📗", title: "Тақырып иесі", text: "Бір тақырыпты толық аяқтау", value: topicsDone, goal: 1 },
+    { icon: "🎯", title: "Алғашқы қадам", text: "Алғашқы тапсырманы орындау", value: tasksDone, goal: 1 },
+    { icon: "🏆", title: "Мақал шебері", text: "10 тапсырманы орындау", value: tasksDone, goal: 10 },
+    { icon: "📗", title: "Сабақ иесі", text: "Бір сабақты толық аяқтау", value: lessonsDone, goal: 1 },
+    { icon: "👑", title: "Ұлы данышпан", text: "Барлық сабақтарды аяқтау", value: lessonsDone, goal: Math.max(lessonsTotal, 1) },
     { icon: "⭐", title: "Білім иесі", text: "100 ұпай жинау", value: points, goal: 100 },
     { icon: "🌟", title: "Тәжірибелі оқушы", text: "300 ұпай жинау", value: points, goal: 300 },
     { icon: "💎", title: "Абсолютті шебер", text: "500 ұпай жинау", value: points, goal: 500 },
@@ -41,8 +44,8 @@ export function Profile() {
 
   const stats = [
     { value: points, label: "Жиналған ұпай" },
-    { value: `${topicsDone}/${topicsTotal}`, label: "Аяқталған сабақ" },
-    { value: learned, label: "Үйренген мақал" },
+    { value: `${lessonsDone}/${lessonsTotal}`, label: "Аяқталған сабақ" },
+    { value: tasksDone, label: "Орындалған тапсырма" },
     { value: achievements.filter((a) => a.unlocked).length, label: "Жетістік" },
   ];
 
@@ -80,9 +83,9 @@ export function Profile() {
         <h2 id="study-title" className="mb-4 font-serif text-xl font-bold text-heading">
           Оқу жетістігі
         </h2>
-        <ProgressBar value={total ? (learned / total) * 100 : 0} label="Жалпы прогресс" large />
+        <ProgressBar value={lessonsTotal ? (lessonsDone / lessonsTotal) * 100 : 0} label="Жалпы прогресс" large />
         <p className="mt-2 text-sm text-muted">
-          Жалпы прогресс: {learned}/{total} мақал ({total ? Math.round((learned / total) * 100) : 0}%)
+          Жалпы прогресс: {lessonsDone}/{lessonsTotal} сабақ ({lessonsTotal ? Math.round((lessonsDone / lessonsTotal) * 100) : 0}%)
         </p>
       </section>
 

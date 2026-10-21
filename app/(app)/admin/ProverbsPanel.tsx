@@ -30,7 +30,7 @@ export function ProverbsPanel({ library }: { library: LibraryState }) {
   if (topics.length === 0) {
     return (
       <Panel title="Мақалдар">
-        <p className="text-muted">Алдымен «Сабақтар» бөлімінде кемінде бір сабақ (тақырып) жасаңыз немесе «Импорт» арқылы деректерді жүктеңіз.</p>
+        <p className="text-muted">Алдымен «Тақырыптар» бөлімінде кемінде бір тақырып жасаңыз немесе «Импорт» арқылы деректерді жүктеңіз.</p>
       </Panel>
     );
   }
@@ -80,7 +80,7 @@ export function ProverbsPanel({ library }: { library: LibraryState }) {
             />
           </label>
           <label className="sm:w-64">
-            <span className="sr-only">Сабақ бойынша сүзу</span>
+            <span className="sr-only">Тақырып бойынша сүзу</span>
             <select
               value={topic}
               onChange={(e) => {
@@ -89,7 +89,7 @@ export function ProverbsPanel({ library }: { library: LibraryState }) {
               }}
               className="field"
             >
-              <option value="all">Барлық сабақтар</option>
+              <option value="all">Барлық тақырыптар</option>
               {topics.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.title}
@@ -203,7 +203,7 @@ function ProverbForm({
       <TextField label="Мағынасы (түсіндірме)" value={data.explanation} onChange={set("explanation")} multiline required />
       <TextField label="Орысша аудармасы" value={data.translation_ru} onChange={set("translation_ru")} lang="ru" hint="Міндетті емес" />
       <label className="block">
-        <span className="mb-1 block text-sm font-medium">Сабақ (тақырып)</span>
+        <span className="mb-1 block text-sm font-medium">Тақырып</span>
         <select value={data.topic} onChange={(e) => set("topic")(e.target.value)} className="field">
           {topics.map((t) => (
             <option key={t.id} value={t.id}>
