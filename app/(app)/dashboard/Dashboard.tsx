@@ -117,8 +117,8 @@ export function Dashboard() {
           {ACTIONS.map(({ href, Icon, title, text }) => (
             <li key={href}>
               <Link href={href} className="card-link group flex h-full flex-col p-5">
-                <span className="grid h-11 w-11 place-items-center rounded-xl border border-gold/40 bg-gold/10 text-gold-text">
-                  <Icon size={22} />
+                <span className="grid h-12 w-12 place-items-center rounded-xl border border-gold/40 bg-gold/10 text-gold-text">
+                  <Icon size={28} />
                 </span>
                 <h3 className="mt-4 font-serif text-lg font-semibold text-heading">{title}</h3>
                 <p className="mt-1 flex-1 text-sm text-muted">{text}</p>

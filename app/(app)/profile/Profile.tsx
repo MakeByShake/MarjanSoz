@@ -110,7 +110,7 @@ export function Profile() {
                   a.unlocked ? "border-gold/50 bg-gold/15 text-gold-text" : "border-line bg-bg text-muted/70"
                 }`}
               >
-                <Icon size={24} />
+                <Icon size={28} />
               </span>
               <div className="min-w-0 flex-1">
                 <h3 className="font-semibold">{a.title}</h3>
