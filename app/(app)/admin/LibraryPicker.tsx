@@ -23,6 +23,7 @@ export function LibraryPicker({
   kinds = ["proverb", "balama"],
   multiple,
   chosen,
+  loading,
 }: {
   open: boolean;
   onClose: () => void;
@@ -33,6 +34,7 @@ export function LibraryPicker({
   kinds?: Picked["kind"][];
   multiple?: boolean;
   chosen?: Set<string>;
+  loading?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [kind, setKind] = useState<Picked["kind"]>(kinds[0]);
@@ -150,7 +152,11 @@ export function LibraryPicker({
             </li>
           );
         })}
-        {list.length === 0 && <li className="p-8 text-center text-muted">Ештеңе табылмады</li>}
+        {list.length === 0 && (
+          <li className="p-8 text-center text-muted">
+            {loading && kind === "proverb" ? "⏳ Мақалдар жүктелуде..." : "Ештеңе табылмады"}
+          </li>
+        )}
       </ul>
       <div className="border-t border-line px-4 pb-4">
         <p className="mt-3 text-center text-xs text-muted">{all.length} табылды</p>

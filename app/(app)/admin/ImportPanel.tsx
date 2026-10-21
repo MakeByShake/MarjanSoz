@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import seed from "@/data/proverbs.json";
 import { parseImport, prepareImport, replaceAllProverbs, type ImportRow } from "@/lib/admin";
 import { normalize } from "@/lib/proverbs";
+import { loadSeedRows } from "@/lib/seed";
 import { SEED_TOPICS } from "@/lib/topics";
 import { Panel, StatusLine, useAction, type LibraryState } from "./shared";
 
@@ -39,7 +39,10 @@ export function ImportPanel({ library }: { library: LibraryState }) {
     }
   }
 
-  const seedRows: ImportRow[] = seed.map((p) => ({ ...p, id: String(p.id) }));
+  const [seedRows, setSeedRows] = useState<ImportRow[]>([]);
+  useEffect(() => {
+    loadSeedRows().then(setSeedRows, () => {});
+  }, []);
   const known = new Set(proverbs.map((p) => normalize(p.text)));
   const missing = seedRows.filter((r) => !known.has(normalize(r.text))).length;
 
@@ -80,9 +83,9 @@ export function ImportPanel({ library }: { library: LibraryState }) {
           Базада жоқтары ғана қосылады, бар мақалдар мен олардың түсіндірмелері өзгермейді.
         </p>
         <p className="mb-4 text-sm">
-          {missing === 0 ? "✅ Барлығы базада бар." : <>Базада жоқ: <strong>{missing}</strong> мақал.</>}
+          {seedRows.length === 0 ? "Жүктелуде..." : missing === 0 ? "✅ Барлығы базада бар." : <>Базада жоқ: <strong>{missing}</strong> мақал.</>}
         </p>
-        <button type="button" className="btn-primary" disabled={busy || missing === 0} onClick={loadSeed}>
+        <button type="button" className="btn-primary" disabled={busy || seedRows.length === 0 || missing === 0} onClick={loadSeed}>
           {busy ? "Жүктелуде..." : `${missing} мақалды базаға қосу`}
         </button>
       </Panel>

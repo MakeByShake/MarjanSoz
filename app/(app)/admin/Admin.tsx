@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import seed from "@/data/proverbs.json";
 import { syncSeed } from "@/lib/admin";
+import { loadSeedRows } from "@/lib/seed";
 import { SEED_TOPICS, SEED_VERSION } from "@/lib/topics";
 import { Loading, PageHeader } from "@/components/ui";
 import { useBalama } from "@/lib/balama";
@@ -45,7 +45,7 @@ export function Admin() {
       setSync("running");
       try {
         await syncSeed(
-          seed.map((p) => ({ ...p, id: String(p.id) })),
+          await loadSeedRows(),
           SEED_TOPICS,
           { proverbs: library.proverbs, topics: library.topics, chunks: library.chunks, version: library.version },
           SEED_VERSION,
@@ -76,7 +76,7 @@ export function Admin() {
     <>
       <PageHeader
         title="Әкімші панелі"
-        subtitle={`${library.proverbs.length} мақал · ${library.topics.length} тақырып · ${balama.words.length} балама сөз`}
+        subtitle={library.loading ? "Жүктелуде..." : `${library.proverbs.length} мақал · ${library.topics.length} тақырып · ${balama.words.length} балама сөз`}
       />
       {sync !== "idle" && (
         <p
@@ -115,20 +115,23 @@ export function Admin() {
           <p role="alert" className="py-16 text-center text-muted">
             Деректерді жүктеу мүмкін болмады. Бетті жаңартып көріңіз.
           </p>
-        ) : library.loading ? (
-          <Loading />
-        ) : tab === "proverbs" ? (
-          <ProverbsPanel library={library} />
-        ) : tab === "topics" ? (
-          <TopicsPanel library={library} />
         ) : tab === "lessons" ? (
-          <LessonsPanel libs={{ proverbs: library.proverbs, topics: library.topics, balama: balama.words }} />
+          // Список уроков не ждёт мақалы: они нужны только в редакторе и догружаются фоном
+          <LessonsPanel
+            libs={{ proverbs: library.proverbs, topics: library.topics, balama: balama.words, loading: library.loading }}
+          />
         ) : tab === "balama" ? (
           <BalamaPanel />
         ) : tab === "users" ? (
           <UsersPanel />
         ) : tab === "rating" ? (
           <RatingPanel />
+        ) : library.loading ? (
+          <Loading />
+        ) : tab === "proverbs" ? (
+          <ProverbsPanel library={library} />
+        ) : tab === "topics" ? (
+          <TopicsPanel library={library} />
         ) : (
           <ImportPanel library={library} />
         )}

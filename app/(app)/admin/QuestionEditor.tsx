@@ -22,7 +22,8 @@ import type { BalamaWord, LessonQuestion, Proverb, Topic } from "@/lib/types";
 import { LibraryPicker } from "./LibraryPicker";
 import { dangerBtn, NumberField, smallBtn, TextField } from "./shared";
 
-export type Libraries = { proverbs: IndexedProverb[]; balama: BalamaWord[]; topics: Topic[] };
+/** loading — мақалы ещё догружаются (список пока пустой). */
+export type Libraries = { proverbs: IndexedProverb[]; balama: BalamaWord[]; topics: Topic[]; loading?: boolean };
 
 export function QuestionEditor({
   q,
@@ -153,6 +154,7 @@ export function QuestionEditor({
           proverbs={libs.proverbs}
           balama={libs.balama}
           topics={libs.topics}
+          loading={libs.loading}
           onPick={(p) =>
             onChange(p.kind === "proverb" ? fillFromProverb(q, p.item, libs.proverbs) : fillFromBalama(q, p.item, libs.balama))
           }

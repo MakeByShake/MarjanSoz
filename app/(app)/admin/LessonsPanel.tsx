@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { Pagination } from "@/components/Pagination";
 import { Loading } from "@/components/ui";
 import { createLesson, deleteLesson, useLessons } from "@/lib/lessons";
 import { taskMax } from "@/lib/questions";
@@ -10,11 +11,14 @@ import { LessonEditor } from "./LessonEditor";
 import type { Libraries } from "./QuestionEditor";
 import { dangerBtn, Panel, smallBtn, StatusLine, useAction } from "./shared";
 
+const PAGE_SIZE = 20;
+
 export function LessonsPanel({ libs }: { libs: Libraries }) {
   const lessons = useLessons(true);
   const { busy, status, run } = useAction();
   const [editing, setEditing] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<Lesson | null>(null);
+  const [page, setPage] = useState(1);
 
   if (editing) {
     return (
@@ -32,6 +36,9 @@ export function LessonsPanel({ libs }: { libs: Libraries }) {
   if (lessons.error) return <p className="py-16 text-center text-muted">Сабақтарды жүктеу мүмкін болмады.</p>;
   if (!lessons.data) return <Loading />;
   const list = lessons.data;
+  const pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  const current = Math.min(page, pages);
+  const shown = list.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
 
   return (
     <div className="space-y-6">
@@ -61,7 +68,7 @@ export function LessonsPanel({ libs }: { libs: Libraries }) {
         <StatusLine status={status} />
         {list.length === 0 && <p className="text-muted">Сабақтар әлі жоқ.</p>}
         <ul className="divide-y divide-line">
-          {list.map((l) => {
+          {shown.map((l) => {
             const questions = l.tasks.reduce((s, t) => s + t.questions.length, 0);
             const points = l.tasks.reduce((s, t) => s + taskMax(t), 0);
             return (
@@ -105,6 +112,7 @@ export function LessonsPanel({ libs }: { libs: Libraries }) {
             );
           })}
         </ul>
+        <Pagination page={current} pages={pages} onPage={setPage} />
       </Panel>
 
       <ConfirmDialog

@@ -177,7 +177,7 @@ function Editor({ initial, libs, onBack }: { initial: Lesson; libs: Libraries; o
       </Panel>
 
       <Panel
-        title={`Оқу мақалдары (${study.length})`}
+        title={`Оқу мақалдары (${libs.loading ? lesson.proverbIds.length : study.length})`}
         action={
           <button type="button" className={smallBtn} onClick={() => setPickingStudy(true)}>
             ＋ Мақал қосу
@@ -211,6 +211,7 @@ function Editor({ initial, libs, onBack }: { initial: Lesson; libs: Libraries; o
             </li>
           ))}
         </ol>
+        {libs.loading && lesson.proverbIds.length > 0 && <p className="text-sm text-muted">⏳ Мақалдар жүктелуде...</p>}
       </Panel>
 
       <Panel
@@ -384,6 +385,7 @@ function Editor({ initial, libs, onBack }: { initial: Lesson; libs: Libraries; o
           proverbs={libs.proverbs}
           balama={libs.balama}
           topics={libs.topics}
+          loading={libs.loading}
         />
       )}
 
