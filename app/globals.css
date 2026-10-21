@@ -28,6 +28,7 @@
   --ornament: #c9a23a;
   --panel: #1f403e;
   --on-panel: #f5efe2;
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cpath d='M48 96l80 80 80-80' fill='none' stroke='%2359625e' stroke-width='20' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   color-scheme: light;
 }
 
@@ -52,6 +53,7 @@
   --ornament: #d4af37;
   --panel: #182e2c;
   --on-panel: #f5efe2;
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cpath d='M48 96l80 80 80-80' fill='none' stroke='%23a9b3ae' stroke-width='20' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   color-scheme: dark;
 }
 
@@ -156,6 +158,13 @@ body {
   }
   .field {
     @apply w-full rounded-xl border border-line bg-card px-4 py-2.5 text-text transition-colors placeholder:text-muted focus:border-primary focus:ring-3 focus:ring-primary/15 focus:outline-none dark:focus:border-gold dark:focus:ring-gold/20;
+  }
+  /* Выпадающие списки: своя стрелка с отступом от края вместо системной, прижатой к рамке */
+  select.field {
+    @apply cursor-pointer appearance-none bg-no-repeat pr-12;
+    background-image: var(--chevron);
+    background-position: right 1.1rem center;
+    background-size: 16px 16px;
   }
   /* Обычная карточка: тонкая рамка, без тяжёлых теней */
   .card {
