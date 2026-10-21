@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { BusyIndicator } from "@/components/BusyIndicator";
-import { Noto_Sans, Noto_Serif, Playfair_Display } from "next/font/google";
+import { Lora, Noto_Sans, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
 // cyrillic-ext содержит казахские буквы ә ғ қ ң ө ұ ү һ і
@@ -9,9 +9,11 @@ const notoSans = Noto_Sans({
   subsets: ["latin", "cyrillic", "cyrillic-ext"],
 });
 
-const notoSerif = Noto_Serif({
-  variable: "--font-noto-serif",
+// Заголовки и мақалдар: Lora — книжная антиква с живым курсивом
+const lora = Lora({
+  variable: "--font-lora",
   subsets: ["latin", "cyrillic", "cyrillic-ext"],
+  style: ["normal", "italic"],
 });
 
 // Тек логотип жазуы үшін («MarjanSóz» — латын әріптері)
@@ -27,7 +29,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#406967",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5f0e6" },
+    { media: "(prefers-color-scheme: dark)", color: "#121a19" },
+  ],
 };
 
 // Ставит сохранённую тему до первой отрисовки, чтобы не было вспышки
@@ -39,7 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="kk"
       data-theme="light"
       suppressHydrationWarning
-      className={`${notoSans.variable} ${notoSerif.variable} ${playfair.variable} h-full antialiased`}
+      className={`${notoSans.variable} ${lora.variable} ${playfair.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />

@@ -17,13 +17,13 @@ import { TopicsPanel } from "./TopicsPanel";
 import { UsersPanel } from "./UsersPanel";
 
 const TABS = [
-  { id: "proverbs", label: "📜 Мақалдар" },
-  { id: "topics", label: "🏷️ Тақырыптар" },
-  { id: "lessons", label: "📚 Сабақтар" },
-  { id: "balama", label: "🎭 Балама сөздер" },
-  { id: "users", label: "👥 Пайдаланушылар" },
-  { id: "rating", label: "🏆 Рейтинг" },
-  { id: "import", label: "📥 Импорт" },
+  { id: "proverbs", label: "Мақалдар" },
+  { id: "topics", label: "Тақырыптар" },
+  { id: "lessons", label: "Сабақтар" },
+  { id: "balama", label: "Балама сөздер" },
+  { id: "users", label: "Пайдаланушылар" },
+  { id: "rating", label: "Рейтинг" },
+  { id: "import", label: "Импорт" },
 ] as const;
 
 type Tab = (typeof TABS)[number]["id"];
@@ -75,6 +75,7 @@ export function Admin() {
   return (
     <>
       <PageHeader
+        kicker="Басқару"
         title="Әкімші панелі"
         subtitle={library.loading ? "Жүктелуде..." : `${library.proverbs.length} мақал · ${library.topics.length} тақырып · ${balama.words.length} балама сөз`}
       />

@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { Logo } from "@/components/Logo";
-import { Divider, OrnateCard } from "@/components/Ornament";
 import { track } from "@/lib/busy";
 import { login, register, useCurrentUser } from "@/lib/user";
 import { BusyLabel } from "@/components/ui";
@@ -46,15 +45,15 @@ export function AuthForms() {
   };
 
   return (
-    <OrnateCard className="w-full max-w-md">
-      <div className="text-center">
-        <Logo className="text-4xl" wordClassName="text-primary dark:text-white" />
-        <p className="mt-1 text-muted">Қазақ мақал-мәтелдерін үйрену платформасы</p>
+    <div className="w-full max-w-sm">
+      <div className="mb-10 lg:hidden">
+        <Logo className="text-[30px]" wordClassName="text-primary-dark dark:text-on-panel" />
       </div>
-      <Divider />
+      <p className="kicker">{mode === "login" ? "Қош келдіңіз" : "Жаңа аккаунт"}</p>
+      <h1 className="mt-2 font-serif text-3xl font-semibold text-heading">{mode === "login" ? "Аккаунтқа кіру" : "Тіркелу"}</h1>
+      <p className="mt-2 text-muted">Қазақ мақал-мәтелдерін үйрену платформасы</p>
 
-      <form key={mode} onSubmit={onSubmit} noValidate className="space-y-4">
-        <h1 className="text-center font-serif text-2xl font-bold text-heading">{mode === "login" ? "Кіру" : "Тіркелу"}</h1>
+      <form key={mode} onSubmit={onSubmit} noValidate className="mt-8 space-y-4">
 
         {mode === "register" && <Field name="username" label="Пайдаланушы аты" autoComplete="nickname" />}
         <Field name="email" label="Электронды пошта" type="email" autoComplete="email" />
@@ -69,16 +68,16 @@ export function AuthForms() {
         )}
 
         {error && (
-          <p role="alert" className="rounded-lg border border-red-700/40 bg-red-700/10 px-4 py-2 text-sm text-red-800 dark:text-red-200">
+          <p role="alert" className="rounded-xl border border-red-700/40 bg-red-700/10 px-4 py-2 text-sm text-red-800 dark:text-red-200">
             {error}
           </p>
         )}
 
-        <button type="submit" className="btn-primary w-full" disabled={busy}>
+        <button type="submit" className="btn-primary mt-2 w-full" disabled={busy}>
           {busy ? <BusyLabel>Күте тұрыңыз...</BusyLabel> : mode === "login" ? "Кіру" : "Тіркелу"}
         </button>
 
-        <p className="text-center text-sm">
+        <p className="border-t border-line pt-5 text-center text-sm text-muted">
           {mode === "login" ? "Тіркелмедіңіз бе? " : "Тіркелдіңіз бе? "}
           <button
             type="button"
@@ -89,7 +88,7 @@ export function AuthForms() {
           </button>
         </p>
       </form>
-    </OrnateCard>
+    </div>
   );
 }
 

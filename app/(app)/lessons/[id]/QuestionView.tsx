@@ -9,14 +9,14 @@ export type Prepared = { q: LessonQuestion; options: number[]; rights: number[];
 const LETTERS = ["А", "Ә", "Б", "В", "Г", "Ғ", "Д", "Е", "Ж", "З"];
 
 const optionClass =
-  "flex cursor-pointer items-center justify-center rounded-xl border-2 border-line bg-bg px-4 py-3 text-center font-medium transition hover:border-primary has-checked:border-primary has-checked:bg-primary has-checked:text-white has-focus-visible:outline-3 has-focus-visible:outline-gold dark:hover:border-gold dark:has-checked:border-gold dark:has-checked:bg-gold dark:has-checked:text-bg";
+  "flex min-h-12 cursor-pointer items-center justify-center rounded-xl border border-line bg-card px-4 py-3 text-center font-medium transition-colors hover:border-primary/60 hover:bg-primary/4 has-checked:border-primary has-checked:bg-primary has-checked:text-white has-focus-visible:outline-3 has-focus-visible:outline-gold dark:hover:border-gold dark:has-checked:border-gold dark:has-checked:bg-gold dark:has-checked:text-bg";
 
 export function QuestionView({ item, answer, onAnswer }: { item: Prepared; answer: Answer; onAnswer: (a: Answer) => void }) {
   const { q } = item;
   const shape = typeInfo(q.type).shape;
   const chosen = Array.isArray(answer) ? answer : [];
 
-  const title = <h3 className="mb-2 text-center font-serif text-lg font-bold text-heading">{q.prompt}</h3>;
+  const title = <h3 className="mb-2 text-center font-serif text-xl font-semibold text-heading">{q.prompt}</h3>;
   const text = q.text && <p className="mb-6 whitespace-pre-line text-center font-serif text-xl italic text-proverb">{q.text}</p>;
 
   if (shape === "choice") {
@@ -84,7 +84,7 @@ export function QuestionView({ item, answer, onAnswer }: { item: Prepared; answe
               key={pos}
               type="button"
               onClick={() => onAnswer(chosen.filter((_, p) => p !== pos))}
-              className="rounded-lg bg-primary px-3 py-2 font-medium text-white dark:bg-gold dark:text-bg"
+              className="cursor-pointer rounded-xl bg-primary px-3.5 py-2 font-medium text-white dark:bg-gold dark:text-bg"
               aria-label={`${words[i]} — алып тастау`}
             >
               {words[i]}
@@ -97,7 +97,7 @@ export function QuestionView({ item, answer, onAnswer }: { item: Prepared; answe
               key={i}
               type="button"
               onClick={() => onAnswer([...chosen, i])}
-              className="rounded-lg border-2 border-line bg-card px-3 py-2 font-medium transition hover:border-primary dark:hover:border-gold"
+              className="cursor-pointer rounded-xl border border-line bg-card px-3.5 py-2 font-medium transition-colors hover:border-primary/60 dark:hover:border-gold/60"
             >
               {words[i]}
             </button>
@@ -117,7 +117,7 @@ export function QuestionView({ item, answer, onAnswer }: { item: Prepared; answe
       <ul className="mb-6 space-y-2">
         {item.rights.map((r, n) => (
           <li key={r} className="flex gap-3 rounded-xl border border-gold/50 bg-bg p-3">
-            <span className="font-serif font-bold text-heading">{LETTERS[n] ?? n + 1}</span>
+            <span className="font-serif font-semibold text-gold-text">{LETTERS[n] ?? n + 1}</span>
             <span>{q.pairs[r].right}</span>
           </li>
         ))}

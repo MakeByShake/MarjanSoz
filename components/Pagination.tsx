@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { ArrowLeftIcon, ArrowRightIcon } from "./Icons";
 
 /** Нумерованные страницы: ‹ 1 … 4 5 6 … 20 ›. page начинается с 1. */
 export function Pagination({ page, pages, onPage }: { page: number; pages: number; onPage: (p: number) => void }) {
@@ -15,11 +16,11 @@ export function Pagination({ page, pages, onPage }: { page: number; pages: numbe
   }
   const nums = new Set([1, pages, page - 1, page, page + 1].filter((n) => n >= 1 && n <= pages));
   const list = [...nums].sort((a, b) => a - b);
-  const btn = "grid h-9 min-w-9 place-items-center rounded-lg border px-2 text-sm transition disabled:opacity-40";
+  const btn = "grid h-10 min-w-10 cursor-pointer place-items-center rounded-xl border bg-card px-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40";
   return (
-    <nav aria-label="Беттер" className="mt-6 flex flex-wrap items-center justify-center gap-1.5">
+    <nav aria-label="Беттер" className="mt-8 flex flex-wrap items-center justify-center gap-1.5">
       <button type="button" className={`${btn} border-line`} disabled={page === 1} onClick={() => onPage(page - 1)} aria-label="Алдыңғы бет">
-        ‹
+        <ArrowLeftIcon size={16} />
       </button>
       {list.map((n, i) => (
         <span key={n} className="flex items-center gap-1.5">
@@ -29,7 +30,7 @@ export function Pagination({ page, pages, onPage }: { page: number; pages: numbe
             onClick={() => onPage(n)}
             aria-current={n === page ? "page" : undefined}
             className={`${btn} ${
-              n === page ? "border-primary bg-primary text-white dark:border-gold dark:bg-gold dark:text-bg" : "border-line hover:border-primary dark:hover:border-gold"
+              n === page ? "border-primary bg-primary font-semibold text-white dark:border-gold dark:bg-gold dark:text-bg" : "border-line hover:border-primary/50 dark:hover:border-gold/50"
             }`}
           >
             {n}
@@ -37,7 +38,7 @@ export function Pagination({ page, pages, onPage }: { page: number; pages: numbe
         </span>
       ))}
       <button type="button" className={`${btn} border-line`} disabled={page === pages} onClick={() => onPage(page + 1)} aria-label="Келесі бет">
-        ›
+        <ArrowRightIcon size={16} />
       </button>
       {pages > 5 && (
         <form onSubmit={go} className="ml-2 flex items-center gap-1.5 text-sm">
@@ -50,7 +51,7 @@ export function Pagination({ page, pages, onPage }: { page: number; pages: numbe
             onChange={(e) => setJump(e.target.value)}
             placeholder={`1–${pages}`}
             aria-label="Бет нөмірі"
-            className="h-9 w-20 rounded-lg border border-line bg-bg px-2 text-center"
+            className="h-10 w-20 rounded-xl border border-line bg-card px-2 text-center"
           />
           <button type="submit" className={`${btn} border-line hover:border-primary dark:hover:border-gold`} disabled={!jump}>
             Өту

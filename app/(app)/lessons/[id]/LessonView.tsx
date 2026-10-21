@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { OrnateCard } from "@/components/Ornament";
-import { BusyLabel, Loading, PageHeader, ProgressBar } from "@/components/ui";
+import { ArrowLeftIcon, ArrowRightIcon, BadgeCheckIcon, CheckIcon, CloseIcon, CompassIcon, RefreshIcon } from "@/components/Icons";
+import { Divider, OrnateCard } from "@/components/Ornament";
+import { BusyLabel, EmptyState, Loading, PageHeader, ProgressBar, SectionTitle } from "@/components/ui";
 import { effective, saveTaskScore, taskPassed, useLesson, useMyResults } from "@/lib/lessons";
 import { useLibrary } from "@/lib/proverbs";
 import { type Answer, correctText, grade, orderWords, shuffle, taskMax, typeInfo } from "@/lib/questions";
@@ -45,11 +46,11 @@ export function LessonView({ id }: { id: string }) {
   const lesson = loaded.data.lesson;
   if (!lesson) {
     return (
-      <Message icon="😕" title="Сабақ табылмады" text="Мүмкін, ол әлі жарияланбаған.">
+      <EmptyState icon={<CompassIcon size={24} />} title="Сабақ табылмады" text="Мүмкін, ол әлі жарияланбаған.">
         <Link href="/lessons" className="btn-primary">
           Сабақтарға оралу
         </Link>
-      </Message>
+      </EmptyState>
     );
   }
 
@@ -85,19 +86,29 @@ export function LessonView({ id }: { id: string }) {
 
   const header = (
     <>
-      <nav aria-label="Навигация" className="mb-4 text-sm text-muted">
-        <Link href="/lessons" className="text-primary underline-offset-4 hover:underline dark:text-gold">
-          Сабақтар
-        </Link>{" "}
-        / {lesson.title}
+      <nav aria-label="Навигация" className="mb-5 text-sm">
+        <Link href="/lessons" className="inline-flex items-center gap-1.5 font-medium text-muted transition-colors hover:text-heading">
+          <ArrowLeftIcon size={16} />
+          Барлық сабақтар
+        </Link>
       </nav>
-      <PageHeader title={`${lesson.icon} ${lesson.title}`} subtitle={lesson.description} />
-      <div className="mx-auto mb-8 max-w-xl">
-        <ProgressBar value={max ? (Math.min(score, max) / max) * 100 : 0} label="Сабақ прогресі" />
-        <p className="mt-2 text-center text-sm text-muted">
-          {score}/{max} балл{result?.manual !== null && result?.manual !== undefined ? " (мұғалім қойған)" : ""}
-        </p>
-      </div>
+      <PageHeader
+        kicker="Сабақ"
+        title={lesson.title}
+        subtitle={lesson.description}
+        aside={
+          <div className="w-full sm:w-64">
+            <div className="mb-2 flex justify-between text-sm">
+              <span className="text-muted">Прогресс</span>
+              <span className="font-medium">
+                {score}/{max} балл
+              </span>
+            </div>
+            <ProgressBar value={max ? (Math.min(score, max) / max) * 100 : 0} label="Сабақ прогресі" />
+            {result?.manual !== null && result?.manual !== undefined && <p className="mt-1.5 text-xs text-muted">Мұғалім қойған балл</p>}
+          </div>
+        }
+      />
     </>
   );
 
@@ -109,10 +120,12 @@ export function LessonView({ id }: { id: string }) {
       <>
         {header}
         <OrnateCard className="mx-auto max-w-3xl">
-          <p className="mb-1 text-center font-serif text-lg font-bold text-heading">{phase.task.title}</p>
-          <p className="mb-4 text-center text-sm font-medium text-muted">
-            Сұрақ {phase.index + 1} / {phase.items.length} · {item.q.points} балл
-          </p>
+          <div className="mb-3 flex items-baseline justify-between gap-4">
+            <p className="font-serif text-lg font-semibold text-heading">{phase.task.title}</p>
+            <p className="shrink-0 text-sm font-medium text-muted">
+              {phase.index + 1} / {phase.items.length} · {item.q.points} балл
+            </p>
+          </div>
           <ProgressBar value={((phase.index + 1) / phase.items.length) * 100} label="Тапсырма прогресі" />
           <div className="mt-6">
             <QuestionView key={`${phase.task.id}-${phase.index}`} item={item} answer={phase.answers[phase.index]} onAnswer={setAnswer} />
@@ -123,7 +136,8 @@ export function LessonView({ id }: { id: string }) {
               className="btn-secondary"
               onClick={() => (phase.index === 0 ? setPhase({ name: "overview" }) : setPhase({ ...phase, index: phase.index - 1 }))}
             >
-              {phase.index === 0 ? "✕ Шығу" : "← Алдыңғы"}
+              {phase.index === 0 ? <CloseIcon size={18} /> : <ArrowLeftIcon size={18} />}
+              {phase.index === 0 ? "Шығу" : "Алдыңғы"}
             </button>
             <button
               type="button"
@@ -131,7 +145,19 @@ export function LessonView({ id }: { id: string }) {
               disabled={saving}
               onClick={() => (isLast ? finish(phase.task, phase.items, phase.answers) : setPhase({ ...phase, index: phase.index + 1 }))}
             >
-              {saving ? <BusyLabel>Сақталуда...</BusyLabel> : isLast ? "Аяқтау" : "Келесі →"}
+              {saving ? (
+                <BusyLabel>Сақталуда...</BusyLabel>
+              ) : isLast ? (
+                <>
+                  <CheckIcon size={18} />
+                  Аяқтау
+                </>
+              ) : (
+                <>
+                  Келесі
+                  <ArrowRightIcon size={18} />
+                </>
+              )}
             </button>
           </div>
         </OrnateCard>
@@ -150,11 +176,14 @@ export function LessonView({ id }: { id: string }) {
       <>
         {header}
         <OrnateCard className="mx-auto max-w-3xl text-center">
-          <div aria-hidden="true" className="text-5xl">
-            {passed ? "🎉" : "📝"}
-          </div>
-          <h2 className="mt-2 font-serif text-2xl font-bold text-heading">{passed ? "Құттықтаймыз!" : "Қайталап көріңіз"}</h2>
-          <p className="my-3 font-serif text-4xl font-bold text-heading">
+          <span
+            aria-hidden="true"
+            className={`mx-auto grid h-16 w-16 place-items-center rounded-full ${passed ? "bg-success/12 text-success" : "bg-gold/15 text-gold-text"}`}
+          >
+            {passed ? <BadgeCheckIcon size={32} /> : <RefreshIcon size={30} />}
+          </span>
+          <h2 className="mt-4 font-serif text-2xl font-semibold text-heading">{passed ? "Құттықтаймыз!" : "Қайталап көріңіз"}</h2>
+          <p className="my-3 font-serif text-5xl font-semibold text-heading">
             {phase.score} / {taskMaxPoints} балл
           </p>
           <p className="text-muted">
@@ -169,10 +198,11 @@ export function LessonView({ id }: { id: string }) {
 
           {mistakes.length > 0 && (
             <div className="mt-6 text-left">
-              <h3 className="mb-3 font-serif text-lg font-bold text-heading">Қателер:</h3>
+              <Divider />
+              <h3 className="mb-3 font-serif text-lg font-semibold text-heading">Қателермен жұмыс</h3>
               <ul className="space-y-3">
                 {mistakes.map(({ it, got }) => (
-                  <li key={it.q.id} className="rounded-lg border border-line bg-bg p-4">
+                  <li key={it.q.id} className="rounded-xl border border-line border-l-2 border-l-clay/60 bg-bg p-4">
                     <p className="font-medium">{it.q.prompt}</p>
                     {it.q.text && <p className="mt-1 font-serif italic text-proverb">{it.q.text}</p>}
                     <p className="mt-2 whitespace-pre-line text-sm">
@@ -188,10 +218,12 @@ export function LessonView({ id }: { id: string }) {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             {passed && next ? (
               <button type="button" className="btn-primary" onClick={() => start(next)}>
-                Келесі тапсырма →
+                Келесі тапсырма
+                <ArrowRightIcon size={18} />
               </button>
             ) : (
               <button type="button" className="btn-primary" onClick={() => start(phase.task)}>
+                <RefreshIcon size={18} />
                 Қайталау
               </button>
             )}
@@ -208,28 +240,21 @@ export function LessonView({ id }: { id: string }) {
     <>
       {header}
       {study.length > 0 && (
-        <section aria-labelledby="study-title" className="mb-10">
-          <h2 id="study-title" className="mb-4 text-center font-serif text-xl font-bold text-heading">
-            Осы мақалдарды оқып, есте сақтаңыз
-          </h2>
-          <ol className="space-y-5">
+        <section aria-labelledby="study-title" className="mb-12">
+          <SectionTitle id="study-title" kicker="Алдымен оқыңыз" title="Осы мақалдарды есте сақтаңыз" />
+          <ol className="grid gap-4 md:grid-cols-2">
             {study.map((p, i) => (
-              <li key={p.id}>
-                <OrnateCard>
-                  <span
-                    aria-hidden="true"
-                    className="mb-3 inline-grid h-9 w-9 place-items-center rounded-full bg-primary font-bold text-white dark:bg-gold dark:text-bg"
-                  >
-                    {i + 1}
-                  </span>
-                  <p className="font-serif text-xl italic text-proverb sm:text-2xl">«{p.text}»</p>
-                  <p className="mt-3">{p.explanation}</p>
-                  {p.translation_ru && (
-                    <p lang="ru" className="mt-2 text-sm text-muted">
-                      {p.translation_ru}
-                    </p>
-                  )}
-                </OrnateCard>
+              <li key={p.id} className="card relative p-6 pl-16">
+                <span aria-hidden="true" className="absolute top-5 left-5 font-serif text-2xl font-semibold text-gold-text/80">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <p className="font-serif text-xl leading-snug font-medium text-proverb italic">«{p.text}»</p>
+                <p className="mt-3">{p.explanation}</p>
+                {p.translation_ru && (
+                  <p lang="ru" className="mt-2 text-sm text-muted">
+                    {p.translation_ru}
+                  </p>
+                )}
               </li>
             ))}
           </ol>
@@ -237,29 +262,27 @@ export function LessonView({ id }: { id: string }) {
       )}
 
       <section aria-labelledby="tasks-title">
-        <h2 id="tasks-title" className="mb-4 text-center font-serif text-xl font-bold text-heading">
-          Тапсырмалар
-        </h2>
-        {lesson.tasks.length === 0 && <p className="text-center text-muted">Тапсырмалар әлі қосылмаған.</p>}
-        <ol className="mx-auto max-w-3xl space-y-4">
+        <SectionTitle id="tasks-title" kicker="Тексеріс" title="Тапсырмалар" />
+        {lesson.tasks.length === 0 && <p className="text-muted">Тапсырмалар әлі қосылмаған.</p>}
+        <ol className="card divide-y divide-line overflow-hidden">
           {lesson.tasks.map((t, i) => {
             const best = result?.tasks[t.id];
             const passed = taskPassed(lesson, t.id, best);
             const empty = t.questions.length === 0;
             return (
-              <li key={t.id} className="flex flex-col gap-3 rounded-2xl border border-line bg-card p-5 shadow-sm sm:flex-row sm:items-center">
+              <li key={t.id} className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:px-6">
                 <span
                   aria-hidden="true"
-                  className={`grid h-10 w-10 shrink-0 place-items-center rounded-full font-bold ${
-                    passed ? "bg-success text-white" : "bg-track"
+                  className={`grid h-10 w-10 shrink-0 place-items-center rounded-full font-serif font-semibold ${
+                    passed ? "bg-success text-white" : "border border-line bg-bg text-muted"
                   }`}
                 >
-                  {passed ? "✓" : i + 1}
+                  {passed ? <CheckIcon size={18} /> : i + 1}
                 </span>
                 <div className="min-w-0 flex-1">
                   <h3 className="font-semibold">{t.title}</h3>
                   {t.instruction && <p className="text-sm text-muted">{t.instruction}</p>}
-                  <p className="text-sm text-muted">
+                  <p className="mt-0.5 text-sm text-muted">
                     {t.questions.length} сұрақ · {best ?? 0}/{taskMax(t)} балл
                   </p>
                 </div>
@@ -271,7 +294,10 @@ export function LessonView({ id }: { id: string }) {
           })}
         </ol>
         {result?.completed && (
-          <p className="mt-6 text-center font-serif text-lg font-bold text-heading">🎉 Сабақ толық аяқталды!</p>
+          <p className="mt-6 flex items-center justify-center gap-2 rounded-2xl border border-success/40 bg-success/10 p-4 font-serif text-lg font-semibold text-success">
+            <BadgeCheckIcon size={22} />
+            Сабақ толық аяқталды!
+          </p>
         )}
       </section>
     </>
@@ -281,17 +307,4 @@ export function LessonView({ id }: { id: string }) {
 function nextTask(lesson: Lesson, taskId: string) {
   const i = lesson.tasks.findIndex((t) => t.id === taskId);
   return lesson.tasks.slice(i + 1).find((t) => t.questions.length > 0);
-}
-
-function Message({ icon, title, text, children }: { icon: string; title: string; text: string; children: React.ReactNode }) {
-  return (
-    <OrnateCard className="mx-auto max-w-2xl text-center">
-      <div aria-hidden="true" className="text-5xl">
-        {icon}
-      </div>
-      <h2 className="mt-3 font-serif text-2xl font-bold text-heading">{title}</h2>
-      <p className="mt-2 text-muted">{text}</p>
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center">{children}</div>
-    </OrnateCard>
-  );
 }

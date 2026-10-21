@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Сабақтар" };
 export default function Page() {
   return (
     <>
-      <PageHeader title="Сабақтар" subtitle="Мақалдарды оқып, тапсырмаларды орындаңыз" />
+      <PageHeader kicker="Оқу жолы" title="Сабақтар" subtitle="Мақалдарды оқып, тапсырмаларды орындаңыз" />
       <LessonList />
     </>
   );

@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Рейтинг" };
 export default function Page() {
   return (
     <>
-      <PageHeader title="Рейтинг" subtitle="Ең белсенді оқушылардың тізімі" />
+      <PageHeader kicker="Көшбасшылар" title="Рейтинг" subtitle="Ең белсенді оқушылардың тізімі" />
       <RatingList />
     </>
   );

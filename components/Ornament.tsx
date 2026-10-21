@@ -1,38 +1,66 @@
 import type { ReactNode } from "react";
 
-/** Полоса қошқар мүйіз. Декоративная, скрыта от скринридеров. */
-export function OrnamentBand({ className = "bg-ornament" }: { className?: string }) {
-  return <div aria-hidden="true" className={`ornament-band w-full ${className}`} />;
+/**
+ * Казахские орнаменты — каждый на своём месте:
+ * сынық мүйіз — края шапки и подвала, тұмар — края тёмных панелей,
+ * қошқар мүйіз — уголки карточек, шаңырақ — крупный знак в героях.
+ * Все декоративные и скрыты от скринридеров.
+ */
+export function OrnamentBand({ kind = "synyq", className = "bg-ornament" }: { kind?: "synyq" | "tumar"; className?: string }) {
+  return <div aria-hidden="true" className={`band-${kind} w-full ${className}`} />;
+}
+
+/** Шаңырақ: кольцо с крестовой решёткой күлдіреуіш и лучами-уықтами. */
+export function Shanyrak({ className = "" }: { className?: string }) {
+  const uyks = Array.from({ length: 32 }, (_, i) => (i * Math.PI) / 16);
+  return (
+    <svg aria-hidden="true" viewBox="-60 -60 120 120" className={className} fill="none" stroke="currentColor">
+      <g strokeWidth="1.2" strokeLinecap="round">
+        {uyks.map((a) => (
+          <line
+            key={a}
+            x1={(Math.cos(a) * 45).toFixed(2)}
+            y1={(Math.sin(a) * 45).toFixed(2)}
+            x2={(Math.cos(a) * 59).toFixed(2)}
+            y2={(Math.sin(a) * 59).toFixed(2)}
+          />
+        ))}
+      </g>
+      <circle r="44" strokeWidth="2" />
+      <circle r="38.5" strokeWidth="1" />
+      {/* Күлдіреуіш: по две пары перекрещенных планок, как в тундуке юрты */}
+      <g strokeWidth="1.6">
+        <path d="M-11.5-36.7V36.7M-6.5-37.9V37.9M6.5-37.9V37.9M11.5-36.7V36.7" />
+        <path d="M-36.7-11.5H36.7M-37.9-6.5H37.9M-37.9 6.5H37.9M-36.7 11.5H36.7" />
+      </g>
+    </svg>
+  );
 }
 
 const CORNER_POSITION = {
-  tl: "left-1.5 top-1.5",
-  tr: "right-1.5 top-1.5 -scale-x-100",
-  bl: "bottom-1.5 left-1.5 -scale-y-100",
-  br: "bottom-1.5 right-1.5 -scale-100",
+  tl: "left-2 top-2",
+  br: "bottom-2 right-2 -scale-100",
 } as const;
 
-/** Угол рамки: линия с завитком-рогом, как на страницах книги. */
+/** Угол рамки: тонкая линия, переходящая в завиток қошқар мүйіз. */
 function Corner({ position }: { position: keyof typeof CORNER_POSITION }) {
   return (
     <svg
       aria-hidden="true"
       viewBox="0 0 36 36"
-      className={`pointer-events-none absolute h-7 w-7 text-gold sm:h-9 sm:w-9 ${CORNER_POSITION[position]}`}
+      className={`pointer-events-none absolute h-8 w-8 text-gold/70 ${CORNER_POSITION[position]}`}
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.8"
+      strokeWidth="1.4"
       strokeLinecap="round"
     >
-      <path d="M2 34V12C2 6 6 2 12 2H34" />
-      <path d="M8 20C8 13 13 8 20 8" />
-      <path d="M20 8C25 8 26 14 22 15C19.5 15.6 18.4 13.4 20 12.4" />
-      <path d="M8 20C8 25 14 26 15 22C15.6 19.5 13.4 18.4 12.4 20" />
+      <path d="M2 30V10C2 5.6 5.6 2 10 2H30" />
+      <path d="M8 16C8 11.6 11.6 8 16 8C20 8 21 12.5 18 13.4C16 14 15 12 16.4 11.2" />
     </svg>
   );
 }
 
-/** Карточка с орнаментальной рамкой. */
+/** Карточка с двумя орнаментальными уголками (по диагонали — легче, чем рамка целиком). */
 export function OrnateCard({
   children,
   className = "",
@@ -43,28 +71,34 @@ export function OrnateCard({
   as?: "div" | "section" | "article";
 }) {
   return (
-    <Tag
-      className={`relative rounded-2xl border border-line bg-card px-6 py-8 shadow-[0_4px_15px_rgb(0_0_0/0.08)] sm:px-10 ${className}`}
-    >
-      <div aria-hidden="true" className="pointer-events-none absolute inset-3 rounded-xl border border-gold/40" />
+    <Tag className={`card relative px-6 py-8 sm:px-10 ${className}`}>
       <Corner position="tl" />
-      <Corner position="tr" />
-      <Corner position="bl" />
       <Corner position="br" />
       <div className="relative">{children}</div>
     </Tag>
   );
 }
 
-/** Маленький ромб-разделитель между заголовком и текстом. */
-export function Divider() {
+/** Разделитель с тұмаром — треугольным оберегом — между тонкими линиями. */
+export function Divider({ className = "" }: { className?: string }) {
   return (
-    <div aria-hidden="true" className="my-4 flex items-center justify-center gap-3 text-gold">
-      <span className="h-px w-12 bg-current opacity-60" />
-      <svg viewBox="0 0 20 12" className="h-3 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-        <path d="M10 11V6C10 3 7 2 6 4C5.3 5.4 6.6 6.4 7.4 5.4M10 6C10 3 13 2 14 4C14.7 5.4 13.4 6.4 12.6 5.4" />
+    <div aria-hidden="true" className={`my-5 flex items-center justify-center gap-3 text-gold ${className}`}>
+      <span className="h-px w-14 bg-current opacity-50" />
+      <svg viewBox="0 0 24 14" className="h-3.5 w-6" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round">
+        <path d="M12 1.5 19 11H5Z" />
+        <path d="M12 6.2 14.4 9.5H9.6Z" fill="currentColor" stroke="none" />
+        <path d="M1 11h3M20 11h3" />
       </svg>
-      <span className="h-px w-12 bg-current opacity-60" />
+      <span className="h-px w-14 bg-current opacity-50" />
     </div>
+  );
+}
+
+/** Ромб-маркер для надписей-капителей (.kicker). */
+export function Rhomb({ className = "" }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 10 10" className={`h-2 w-2 ${className}`} fill="currentColor">
+      <path d="M5 0 10 5 5 10 0 5Z" />
+    </svg>
   );
 }

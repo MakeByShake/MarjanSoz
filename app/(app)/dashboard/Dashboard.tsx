@@ -1,17 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { Divider, OrnateCard } from "@/components/Ornament";
-import { LoadError, Loading, ProgressBar } from "@/components/ui";
+import { ArrowRightIcon, BookIcon, QuoteIcon, ScrollIcon, TrophyIcon } from "@/components/Icons";
+import { OrnamentBand, Rhomb, Shanyrak } from "@/components/Ornament";
+import { ProgressBar, SectionTitle, Spinner } from "@/components/ui";
 import { useLessons, useMyResults } from "@/lib/lessons";
 import { proverbOfTheDay, useLibrary } from "@/lib/proverbs";
-import { useCurrentUser } from "@/lib/user";
+import { levelFor, useCurrentUser } from "@/lib/user";
 
 const ACTIONS = [
-  { href: "/lessons", icon: "📚", title: "Сабақтарды жалғастыру", text: "Мақалдарды үйренуді жалғастырыңыз" },
-  { href: "/proverbs", icon: "📖", title: "Мақалдар кітапханасы", text: "Барлық мақалдарды оқып шығыңыз" },
-  { href: "/balama", icon: "🎭", title: "Балама сөздер", text: "Тұрақты сөз тіркестерімен танысыңыз" },
-  { href: "/rating", icon: "🏆", title: "Рейтинг", text: "Ең белсенді оқушылар тізімі" },
+  { href: "/lessons", Icon: BookIcon, title: "Сабақтар", text: "Мақалдарды оқып, тапсырмаларды орындаңыз" },
+  { href: "/proverbs", Icon: ScrollIcon, title: "Мақалдар кітапханасы", text: "Мыңдаған мақал — түсіндірмесімен" },
+  { href: "/balama", Icon: QuoteIcon, title: "Балама сөздер", text: "Тұрақты сөз тіркестерінің мағынасы" },
+  { href: "/rating", Icon: TrophyIcon, title: "Рейтинг", text: "Ең белсенді оқушылар тізімі" },
 ];
 
 export function Dashboard() {
@@ -24,62 +25,111 @@ export function Dashboard() {
   const total = lessons.data?.length ?? 0;
   const completed = (lessons.data ?? []).filter((l) => results.data?.get(l.id)?.completed).length;
   const percent = total ? (completed / total) * 100 : 0;
+  const points = user?.points ?? 0;
+  const level = levelFor(points);
 
   return (
-    <div className="space-y-10">
-      <section aria-labelledby="daily-title">
-        <h2 id="daily-title" className="mb-6 text-center font-serif text-2xl font-bold text-heading sm:text-3xl">
-          <span aria-hidden="true">🎯 </span>Күннің мақалы
-        </h2>
-        <OrnateCard className="text-center sm:py-12">
-          {error ? (
-            <LoadError />
-          ) : loading ? (
-            <Loading />
-          ) : !daily ? (
-            <p className="py-6 text-muted">Мақалдар әлі қосылмаған.</p>
-          ) : (
-            <>
-              <blockquote className="font-serif text-2xl italic leading-relaxed text-proverb sm:text-3xl">
-                «{daily.text}»
-              </blockquote>
-              <Divider />
-              <p className="mx-auto max-w-2xl text-lg">{daily.explanation}</p>
-              {daily.translation_ru && (
-                <p lang="ru" className="mx-auto mt-3 max-w-2xl text-sm text-muted">
-                  {daily.translation_ru}
-                </p>
-              )}
-            </>
-          )}
-        </OrnateCard>
-      </section>
+    <div className="space-y-12">
+      <div className="grid gap-5 lg:grid-cols-[1.75fr_1fr]">
+        <section
+          aria-labelledby="daily-title"
+          className="relative isolate flex min-h-80 flex-col overflow-hidden rounded-3xl bg-panel text-on-panel"
+        >
+          <Shanyrak className="spin-slow pointer-events-none absolute -top-28 -right-28 -z-10 h-96 w-96 text-gold/15" />
+          <div className="flex flex-1 flex-col px-6 pt-7 pb-8 sm:px-10 sm:pt-9">
+            <h2 id="daily-title" className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.18em] text-gold uppercase">
+              <Rhomb />
+              Күннің мақалы
+            </h2>
+            {error ? (
+              <p className="mt-6 text-on-panel/80">Мақалдарды жүктеу мүмкін болмады. Бетті жаңартып көріңіз.</p>
+            ) : loading ? (
+              <p role="status" className="mt-8 flex items-center gap-3 text-on-panel/80">
+                <Spinner className="h-5 w-5 text-gold" />
+                Жүктелуде...
+              </p>
+            ) : !daily ? (
+              <p className="mt-6 text-on-panel/80">Мақалдар әлі қосылмаған.</p>
+            ) : (
+              <figure className="mt-auto pt-10">
+                <blockquote className="max-w-3xl font-serif text-[1.65rem] leading-snug font-medium italic sm:text-[2.1rem]">
+                  <span aria-hidden="true" className="mr-1 text-gold">
+                    «
+                  </span>
+                  {daily.text}
+                  <span aria-hidden="true" className="ml-1 text-gold">
+                    »
+                  </span>
+                </blockquote>
+                <figcaption className="mt-5 max-w-2xl border-l-2 border-gold/60 pl-4">
+                  <p className="text-on-panel/85">{daily.explanation}</p>
+                  {daily.translation_ru && (
+                    <p lang="ru" className="mt-2 text-sm text-on-panel/60">
+                      {daily.translation_ru}
+                    </p>
+                  )}
+                </figcaption>
+              </figure>
+            )}
+          </div>
+          <OrnamentBand kind="tumar" className="bg-gold/35" />
+        </section>
 
-      <section aria-labelledby="progress-title" className="rounded-2xl border border-line bg-card p-6 text-center shadow-sm">
-        <h3 id="progress-title" className="mb-4 font-serif text-xl font-bold text-heading">
-          Сіздің жалпы прогрессіңіз
-        </h3>
-        <ProgressBar value={percent} label="Жалпы прогресс" large />
-        <p className="mt-3 font-medium">
-          {completed}/{total} сабақ аяқталды ({Math.round(percent)}%)
-        </p>
-        <p className="text-sm text-muted">{user?.points ?? 0} ұпай жиналды</p>
-      </section>
-
-      <section aria-label="Жылдам әрекеттер" className="grid gap-5 sm:grid-cols-2">
-        {ACTIONS.map((a) => (
-          <Link
-            key={a.href}
-            href={a.href}
-            className="group rounded-2xl border-2 border-transparent bg-card p-7 text-center shadow-sm transition hover:-translate-y-1 hover:border-primary hover:shadow-lg dark:hover:border-gold"
-          >
-            <div aria-hidden="true" className="mb-3 text-5xl">
-              {a.icon}
+        <section aria-labelledby="progress-title" className="card flex flex-col p-6 sm:p-7">
+          <p className="kicker">
+            <Rhomb />
+            Сіздің жолыңыз
+          </p>
+          <h2 id="progress-title" className="mt-2 font-serif text-2xl font-semibold text-heading">
+            {user ? `Сәлем, ${user.username.split(/\s+/)[0]}!` : "Сәлем!"}
+          </h2>
+          <dl className="mt-6 grid grid-cols-2 gap-4">
+            <div>
+              <dt className="text-sm text-muted">Ұпай</dt>
+              <dd className="font-serif text-3xl font-semibold text-heading">{points}</dd>
             </div>
-            <h3 className="font-serif text-xl font-bold text-heading">{a.title}</h3>
-            <p className="mt-1 text-muted">{a.text}</p>
-          </Link>
-        ))}
+            <div>
+              <dt className="text-sm text-muted">Деңгей</dt>
+              <dd className="mt-1.5 font-medium leading-tight">{level.name}</dd>
+            </div>
+          </dl>
+          <div className="mt-6">
+            <div className="mb-2 flex justify-between text-sm">
+              <span className="text-muted">Сабақтар</span>
+              <span className="font-medium">
+                {completed}/{total} · {Math.round(percent)}%
+              </span>
+            </div>
+            <ProgressBar value={percent} label="Жалпы прогресс" large />
+          </div>
+          <div className="mt-auto pt-6">
+            <Link href="/lessons" className="btn-primary w-full">
+              {completed > 0 ? "Оқуды жалғастыру" : "Оқуды бастау"}
+              <ArrowRightIcon size={18} />
+            </Link>
+          </div>
+        </section>
+      </div>
+
+      <section aria-labelledby="sections-title">
+        <SectionTitle id="sections-title" kicker="Бөлімдер" title="Не үйренеміз бүгін?" />
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {ACTIONS.map(({ href, Icon, title, text }) => (
+            <li key={href}>
+              <Link href={href} className="card-link group flex h-full flex-col p-5">
+                <span className="grid h-11 w-11 place-items-center rounded-xl border border-gold/40 bg-gold/10 text-gold-text">
+                  <Icon size={22} />
+                </span>
+                <h3 className="mt-4 font-serif text-lg font-semibold text-heading">{title}</h3>
+                <p className="mt-1 flex-1 text-sm text-muted">{text}</p>
+                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary dark:text-gold">
+                  Ашу
+                  <ArrowRightIcon size={16} className="transition-transform duration-200 group-hover:translate-x-1" />
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </section>
     </div>
   );
