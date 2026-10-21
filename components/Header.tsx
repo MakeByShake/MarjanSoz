@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { logout, useCurrentUser } from "@/lib/user";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { OrnamentBand } from "./Ornament";
-import { ThemeToggle } from "./ThemeToggle";
+import { ThemeToggle, UserIcon } from "./ThemeToggle";
 
 const LINKS = [
   { href: "/dashboard", label: "Басты бет" },
@@ -63,17 +63,18 @@ export function Header() {
           <ThemeToggle />
           <Link
             href="/profile"
-            className={`hidden rounded-lg border border-white/30 px-3 py-2 transition hover:bg-white/10 sm:block ${
-              isActive("/profile") ? "bg-primary-dark" : "bg-white/10"
+            className={`hidden items-center gap-2 rounded-lg px-3 py-2 transition hover:bg-primary-dark sm:flex ${
+              isActive("/profile") ? "bg-primary-dark font-semibold" : ""
             }`}
             aria-current={isActive("/profile") ? "page" : undefined}
           >
-            <span aria-hidden="true">👤 </span>Профиль
+            <UserIcon />
+            Профиль
           </Link>
           <button
             type="button"
             onClick={() => setConfirmOpen(true)}
-            className="hidden rounded-lg border border-white px-3 py-2 transition hover:bg-white/10 lg:block"
+            className="hidden rounded-lg border border-white/60 px-3 py-2 transition hover:bg-white/10 lg:block"
           >
             Шығу
           </button>
