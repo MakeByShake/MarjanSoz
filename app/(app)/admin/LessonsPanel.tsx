@@ -80,9 +80,15 @@ export function LessonsPanel({ libs }: { libs: Libraries }) {
                       {l.published ? "Жарияланған" : "Черновик"}
                     </span>
                   </p>
-                  <p className="text-sm text-muted">
-                    №{l.order} · {l.proverbIds.length} мақал · {l.tasks.length} тапсырма · {questions} сұрақ · {points} балл
-                  </p>
+                  <div className="mt-1 flex flex-wrap gap-1.5 text-xs">
+                    <span className="rounded-full bg-primary px-2.5 py-0.5 font-medium text-white dark:bg-gold dark:text-bg">
+                      {questions} сұрақ
+                    </span>
+                    <span className="rounded-full border border-line px-2.5 py-0.5">{l.tasks.length} тапсырма</span>
+                    <span className="rounded-full border border-line px-2.5 py-0.5">{points} балл</span>
+                    <span className="rounded-full border border-line px-2.5 py-0.5">{l.proverbIds.length} оқу мақалы</span>
+                    <span className="px-1 py-0.5 text-muted">№{l.order}</span>
+                  </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
                   <a href={`/lessons/${l.id}`} target="_blank" rel="noreferrer" className={smallBtn}>

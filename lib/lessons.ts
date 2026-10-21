@@ -15,7 +15,7 @@ import {
 } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 import { db } from "./firebase";
-import { taskMax } from "./questions";
+import { emptyTask, taskMax } from "./questions";
 import type { Lesson, LessonResult, User } from "./types";
 
 /*
@@ -41,7 +41,11 @@ function toLesson(id: string, data: Partial<Lesson>): Lesson {
     published: data.published ?? false,
     passPercent: data.passPercent ?? DEFAULT_PASS,
     proverbIds: data.proverbIds ?? [],
-    tasks: data.tasks ?? [],
+    // Вопросы, сохранённые до появления full/hidden, получают пустые значения
+    tasks: (data.tasks ?? []).map((t) => ({
+      ...t,
+      questions: (t.questions ?? []).map((q) => ({ ...q, full: q.full ?? "", hidden: q.hidden ?? [] })),
+    })),
     updatedAt: data.updatedAt ?? "",
   };
 }
@@ -89,7 +93,7 @@ export function useLesson(id: string) {
 
 export async function createLesson(order: number): Promise<string> {
   const ref = doc(lessonsCol());
-  await saveLesson(toLesson(ref.id, { title: "Жаңа сабақ", order }));
+  await saveLesson(toLesson(ref.id, { title: "Жаңа сабақ", order, tasks: [{ ...emptyTask(), title: "1-тапсырма" }] }));
   return ref.id;
 }
 

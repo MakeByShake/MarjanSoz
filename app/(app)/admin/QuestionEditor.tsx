@@ -3,15 +3,22 @@
 import { useState } from "react";
 import type { IndexedProverb } from "@/lib/proverbs";
 import {
+  applyHidden,
   changeType,
   fillFromBalama,
   fillFromProverb,
+  fullWords,
+  isPartType,
+  maskParts,
   orderWords,
+  type Preset,
+  refillOptions,
+  withPreset,
   problem,
   QUESTION_TYPES,
   typeInfo,
 } from "@/lib/questions";
-import type { BalamaWord, LessonQuestion, Topic } from "@/lib/types";
+import type { BalamaWord, LessonQuestion, Proverb, Topic } from "@/lib/types";
 import { LibraryPicker } from "./LibraryPicker";
 import { dangerBtn, NumberField, smallBtn, TextField } from "./shared";
 
@@ -43,6 +50,8 @@ export function QuestionEditor({
   const issue = problem(q);
   const preview = q.text || q.answer || q.pairs[0]?.left || "Сұрақ мәтіні жоқ";
   const set = <K extends keyof LessonQuestion>(k: K, v: LessonQuestion[K]) => onChange({ ...q, [k]: v });
+  // Старые вопросы без полного мақала редактируются как раньше, через поле «мәтін»
+  const usePart = isPartType(q.type) && (q.full.trim() !== "" || q.text.trim() === "");
 
   return (
     <li className="rounded-xl border border-line border-l-4 border-l-primary/40 bg-bg dark:border-l-gold/50">
@@ -97,7 +106,9 @@ export function QuestionEditor({
 
           <TextField label="Тапсырма (оқушыға көрінетін сұрақ)" value={q.prompt} onChange={(v) => set("prompt", v)} />
 
-          {info.shape !== "order" && info.shape !== "match" && (
+          {usePart && <PartEditor q={q} onChange={onChange} pool={libs.proverbs} />}
+
+          {!usePart && info.shape !== "order" && info.shape !== "match" && (
             <TextField
               label={q.type === "blank" ? "Мәтін (бос орынды _____ деп белгілеңіз)" : "Мақал / мәтін"}
               value={q.text}
@@ -249,5 +260,105 @@ function MatchEditor({ q, onChange }: { q: LessonQuestion; onChange: (q: LessonQ
         ＋ Жұп қосу
       </button>
     </fieldset>
+  );
+}
+
+const PRESETS: { preset: Preset; label: string }[] = [
+  { preset: "start", label: "Басы" },
+  { preset: "middle", label: "Ортасы" },
+  { preset: "end", label: "Соңы" },
+  { preset: "word", label: "Ең ұзын сөз" },
+];
+
+/** Мақал целиком + какую часть скрыть: пресетом или кликом по словам. */
+function PartEditor({ q, onChange, pool }: { q: LessonQuestion; onChange: (q: LessonQuestion) => void; pool: Proverb[] }) {
+  const [preset, setPreset] = useState<Preset | "manual">(q.hidden.length ? "manual" : q.type === "blank" ? "word" : "end");
+  const words = fullWords(q);
+  const hidden = new Set(q.hidden);
+  const { answer } = words.length && q.hidden.length ? maskParts(words, q.hidden) : { answer: "" };
+  const isChoice = typeInfo(q.type).shape === "choice";
+
+  function setFull(full: string) {
+    const next = { ...q, full };
+    if (preset !== "manual") return onChange(withPreset(next, preset));
+    const valid = q.hidden.filter((i) => i < fullWords(next).length);
+    onChange(applyHidden({ ...next, hidden: valid }));
+  }
+
+  function toggleWord(i: number) {
+    setPreset("manual");
+    const next = hidden.has(i) ? q.hidden.filter((x) => x !== i) : [...q.hidden, i].sort((a, b) => a - b);
+    onChange(applyHidden({ ...q, hidden: next }));
+  }
+
+  return (
+    <div className="space-y-3 rounded-xl border border-gold/50 bg-card p-4">
+      <TextField
+        label="Мақал (толық)"
+        value={q.full}
+        onChange={setFull}
+        multiline
+        placeholder="Мысалы: Өнер алды — қызыл тіл"
+        hint="Мақалды толық жазыңыз, содан кейін қай бөлігін жасыратынын таңдаңыз."
+      />
+      {words.length > 0 && (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium">Жасыру:</span>
+            {PRESETS.map((p) => (
+              <button
+                key={p.preset}
+                type="button"
+                aria-pressed={preset === p.preset}
+                onClick={() => {
+                  setPreset(p.preset);
+                  onChange(withPreset(q, p.preset));
+                }}
+                className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
+                  preset === p.preset
+                    ? "border-primary bg-primary text-white dark:border-gold dark:bg-gold dark:text-bg"
+                    : "border-line hover:border-primary dark:hover:border-gold"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <div>
+            <p className="mb-1 text-xs text-muted">Немесе сөздерді басып, өзіңіз белгілеңіз (сары = жасырылады):</p>
+            <div className="flex flex-wrap gap-1.5">
+              {words.map((w, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  aria-pressed={hidden.has(i)}
+                  onClick={() => toggleWord(i)}
+                  className={`rounded-lg border px-2.5 py-1 transition ${
+                    hidden.has(i) ? "border-gold bg-gold/30 font-semibold" : "border-line bg-bg hover:border-primary dark:hover:border-gold"
+                  }`}
+                >
+                  {w}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-lg bg-bg p-3 text-sm">
+            <p>
+              <span className="text-muted">Оқушы көреді: </span>
+              <span className="font-serif italic text-proverb">{q.text}</span>
+            </p>
+            <p className="mt-1">
+              <span className="text-muted">Дұрыс жауап: </span>
+              <strong>{answer || "— сөз белгіленбеген"}</strong>
+            </p>
+          </div>
+          {isChoice && (
+            <button type="button" className={smallBtn} disabled={!answer} onClick={() => onChange(refillOptions(q, pool))}>
+              ⚡ Қате нұсқаларды кітапханадан толтыру
+            </button>
+          )}
+        </>
+      )}
+    </div>
   );
 }

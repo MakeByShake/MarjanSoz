@@ -18,10 +18,10 @@ export const QUESTION_TYPES: {
   hint: string;
   prompt: string;
 }[] = [
-  { type: "ending", shape: "choice", icon: "🔚", title: "Жалғасын тап", hint: "Мақалдың соңын таңдау", prompt: "Мақалдың жалғасын табыңыз" },
+  { type: "ending", shape: "choice", icon: "🔚", title: "Жалғасын тап", hint: "Басын, ортасын не соңын жасырып, нұсқадан таңдату", prompt: "Мақалдың жалғасын табыңыз" },
   { type: "meaning", shape: "choice", icon: "💡", title: "Мағынасын тап", hint: "Мақалдың мағынасын таңдау", prompt: "Мақалдың мағынасын табыңыз" },
-  { type: "blank", shape: "choice", icon: "🧩", title: "Орын толтыру", hint: "Түсіп қалған сөзді таңдау", prompt: "Бос орынға сәйкес сөзді таңдаңыз" },
-  { type: "write", shape: "write", icon: "✍️", title: "Жалғасын жаз", hint: "Жауапты өзі жазады", prompt: "Мақалдың жалғасын жазыңыз" },
+  { type: "blank", shape: "choice", icon: "🧩", title: "Орын толтыру", hint: "Бір сөзді жасырып, нұсқадан таңдату", prompt: "Бос орынға сәйкес сөзді таңдаңыз" },
+  { type: "write", shape: "write", icon: "✍️", title: "Жалғасын жаз", hint: "Бір бөлігін жасырып, оқушы өзі жазады", prompt: "Мақалдың жалғасын жазыңыз" },
   { type: "match", shape: "match", icon: "🔗", title: "Сәйкестендір", hint: "Мақалды мағынасымен сәйкестендіру", prompt: "Мақалдарды мағынасымен сәйкестендіріңіз" },
   { type: "order", shape: "order", icon: "🔀", title: "Сөздерден құра", hint: "Сөздерді дұрыс ретке қою", prompt: "Сөздерден мақал құраңыз" },
   { type: "single", shape: "choice", icon: "☑️", title: "Бір жауап", hint: "Бір дұрыс жауапты таңдау", prompt: "Дұрыс жауапты таңдаңыз" },
@@ -30,6 +30,10 @@ export const QUESTION_TYPES: {
 ];
 
 export const TRUE_FALSE = ["Дұрыс", "Бұрыс"];
+
+/** Типы, где админ пишет мақал целиком и выбирает, какую часть скрыть. */
+export const PART_TYPES: QuestionType[] = ["ending", "blank", "write"];
+export const isPartType = (t: QuestionType) => PART_TYPES.includes(t);
 
 export function typeInfo(type: QuestionType) {
   return QUESTION_TYPES.find((t) => t.type === type) ?? QUESTION_TYPES[0];
@@ -47,6 +51,8 @@ export function emptyQuestion(type: QuestionType): LessonQuestion {
     options: type === "truefalse" ? [...TRUE_FALSE] : typeInfo(type).shape === "choice" ? ["", "", ""] : [],
     correct: typeInfo(type).shape === "choice" ? [0] : [],
     answer: "",
+    full: "",
+    hidden: [],
     pairs: type === "match" ? [{ left: "", right: "" }, { left: "", right: "" }] : [],
     source: null,
   };
@@ -56,15 +62,18 @@ export function emptyQuestion(type: QuestionType): LessonQuestion {
 export function changeType(q: LessonQuestion, type: QuestionType): LessonQuestion {
   const base = emptyQuestion(type);
   const keepOptions = typeInfo(type).shape === "choice" && typeInfo(q.type).shape === "choice" && type !== "truefalse" && q.type !== "truefalse";
-  return {
+  const next = {
     ...base,
     id: q.id,
     points: q.points,
     text: q.text,
+    full: q.full,
+    hidden: q.hidden,
     options: keepOptions ? q.options : base.options,
     correct: keepOptions ? q.correct : base.correct,
     prompt: q.prompt === typeInfo(q.type).prompt ? base.prompt : q.prompt,
   };
+  return isPartType(type) && q.full.trim() ? applyHidden(next) : next;
 }
 
 export function emptyTask(): LessonTask {
@@ -108,39 +117,134 @@ function withDistractors(right: string, others: string[]) {
   return { options, correct: [options.indexOf(right)] };
 }
 
-function longestWord(text: string) {
-  const tokens = text.split(/\s+/);
-  const candidates = tokens
-    .map((t, i) => ({ i, word: cleanWord(t.split(/[-—]/).pop() ?? t) }))
-    .filter((c) => c.word.length >= 3)
-    .sort((a, b) => b.word.length - a.word.length);
-  const pick = candidates[0];
-  if (!pick) return null;
-  const masked = tokens.map((t, i) => (i === pick.i ? t.replace(pick.word, BLANK) : t)).join(" ");
-  return { word: pick.word, masked };
+const wordsOf = (p: { text: string }) =>
+  p.text.split(/\s+/).map((t) => cleanWord(t.split(/[-—]/).pop() ?? t)).filter((w) => w.length >= 3);
+
+/* ---------- Скрытая часть мақала (ending / blank / write) ---------- */
+
+export type Preset = "start" | "middle" | "end" | "word";
+
+export const fullWords = (q: Pick<LessonQuestion, "full">) => q.full.trim().split(/\s+/).filter(Boolean);
+
+const range = (from: number, to: number) => Array.from({ length: Math.max(0, to - from) }, (_, i) => from + i);
+
+/** Какие слова скрыть: начало / середину / конец (граница — запятая или тире) или самое длинное слово. */
+export function presetHidden(full: string, preset: Preset): number[] {
+  const words = full.trim().split(/\s+/).filter(Boolean);
+  const n = words.length;
+  if (n === 0) return [];
+  if (n === 1) return [0];
+  let k = splitProverb(full.trim())[0].split(/\s+/).filter(Boolean).length;
+  if (k <= 0 || k >= n) k = Math.ceil(n / 2);
+  // Отдельно стоящее тире не прячем: оно остаётся в тексте
+  const noDash = (ids: number[]) => ids.filter((i) => !/^[—–-]+$/.test(words[i]));
+  if (preset === "start") return noDash(range(0, k));
+  if (preset === "end") return noDash(range(k, n));
+  if (preset === "middle") {
+    if (n <= 2) return [n - 1];
+    const c = Math.floor((n - 1) / 2);
+    return n >= 7 ? [c, c + 1] : [c];
+  }
+  const longest = words
+    .map((w, i) => ({ i, len: cleanWord(w).length }))
+    .sort((a, b) => b.len - a.len)[0];
+  return [longest.i];
 }
 
-const wordsOf = (p: Proverb) => p.text.split(/\s+/).map((t) => cleanWord(t.split(/[-—]/).pop() ?? t)).filter((w) => w.length >= 3);
+/** Текст с пропусками и скрытая часть. Знаки препинания после пропуска остаются в тексте. */
+export function maskParts(words: string[], hidden: number[]) {
+  const set = new Set(hidden);
+  const parts: string[] = [];
+  const answers: string[] = [];
+  let run: string[] = [];
+  const flush = () => {
+    if (!run.length) return;
+    const last = run[run.length - 1];
+    const tail = last.match(/[,.!?;:»]+$/)?.[0] ?? "";
+    answers.push(cleanWord(run.join(" ")));
+    parts.push(BLANK + tail);
+    run = [];
+  };
+  words.forEach((w, i) => {
+    if (set.has(i)) run.push(w);
+    else {
+      flush();
+      parts.push(w);
+    }
+  });
+  flush();
+  return { text: parts.join(" "), answer: answers.join(" … ") };
+}
+
+/** Пересобирает text и правильный ответ из full + hidden. */
+export function applyHidden(q: LessonQuestion): LessonQuestion {
+  const words = fullWords(q);
+  const hidden = q.hidden.filter((i) => i < words.length);
+  if (words.length === 0 || hidden.length === 0) return { ...q, hidden, text: q.full.trim() };
+  const { text, answer } = maskParts(words, hidden);
+  if (typeInfo(q.type).shape === "write") {
+    const extra = q.answer.split("|").slice(1).join("|");
+    return { ...q, hidden, text, answer: extra ? `${answer}|${extra}` : answer };
+  }
+  const options = q.options.length ? [...q.options] : [""];
+  const ci = q.correct[0] ?? 0;
+  options[ci] = answer;
+  return { ...q, hidden, text, options, correct: [ci] };
+}
+
+/** Заполняет неправильные варианты похожими частями других мақалов (концы, начала или отдельные слова). */
+export function refillOptions(q: LessonQuestion, pool: { text: string }[]): LessonQuestion {
+  const words = fullWords(q);
+  const hidden = [...q.hidden].sort((a, b) => a - b);
+  if (!words.length || !hidden.length) return q;
+  const { answer } = maskParts(words, hidden);
+  const others = pool.filter((o) => normalize(o.text) !== normalize(q.full));
+  let candidates: string[];
+  if (hidden.length > 1 && hidden[hidden.length - 1] === words.length - 1) {
+    candidates = others.map((o) => cleanWord(splitProverb(o.text)[1]));
+  } else if (hidden.length > 1 && hidden[0] === 0) {
+    candidates = others.map((o) => cleanWord(splitProverb(o.text)[0].replace(/\s*—$/, "")));
+  } else {
+    candidates = others.flatMap(wordsOf);
+  }
+  return { ...q, ...withDistractors(answer, candidates) };
+}
+
+const PART_PROMPTS: Record<Exclude<Preset, "word">, { choice: string; write: string }> = {
+  start: { choice: "Мақалдың басын табыңыз", write: "Мақалдың басын жазыңыз" },
+  middle: { choice: "Түсіп қалған сөзді табыңыз", write: "Түсіп қалған сөзді жазыңыз" },
+  end: { choice: "Мақалдың жалғасын табыңыз", write: "Мақалдың жалғасын жазыңыз" },
+};
+const ALL_PART_PROMPTS = new Set([
+  ...Object.values(PART_PROMPTS).flatMap((p) => [p.choice, p.write]),
+  ...QUESTION_TYPES.filter((t) => isPartType(t.type)).map((t) => t.prompt),
+]);
+
+/** Применяет пресет; стандартный текст задания меняется вместе с ним (свой текст админа не трогаем). */
+export function withPreset(q: LessonQuestion, preset: Preset): LessonQuestion {
+  const next = applyHidden({ ...q, hidden: presetHidden(q.full, preset) });
+  if (preset === "word" || !ALL_PART_PROMPTS.has(q.prompt)) return next;
+  return { ...next, prompt: PART_PROMPTS[preset][typeInfo(q.type).shape === "write" ? "write" : "choice"] };
+}
+
+function withPart(q: LessonQuestion, preset: Preset, pool: { text: string }[]): LessonQuestion {
+  const next = withPreset(q, preset);
+  return typeInfo(q.type).shape === "choice" ? refillOptions(next, pool) : next;
+}
 
 /** Заполняет вопрос из мақала. Всё потом можно поправить вручную. */
 export function fillFromProverb(q: LessonQuestion, p: Proverb, pool: Proverb[]): LessonQuestion {
   const others = pool.filter((o) => o.id !== p.id);
   const source = { kind: "proverb" as const, id: p.id };
-  const [start, rest] = splitProverb(p.text);
-
   switch (q.type) {
     case "ending":
-      return { ...q, source, text: `${start} ...`, ...withDistractors(rest, others.map((o) => splitProverb(o.text)[1])) };
+    case "write":
+      return withPart({ ...q, source, full: p.text }, "end", pool);
+    case "blank":
+      return withPart({ ...q, source, full: p.text }, "word", pool);
     case "meaning":
     case "single":
       return { ...q, source, text: p.text, ...withDistractors(p.explanation, others.map((o) => o.explanation)) };
-    case "blank": {
-      const hidden = longestWord(p.text);
-      if (!hidden) return { ...q, source, text: p.text };
-      return { ...q, source, text: hidden.masked, ...withDistractors(hidden.word, others.flatMap(wordsOf)) };
-    }
-    case "write":
-      return { ...q, source, text: `${start} ${BLANK}`, answer: rest };
     case "order":
       return { ...q, source, text: "", answer: p.text };
     case "match": {
@@ -185,10 +289,9 @@ export function fillFromBalama(q: LessonQuestion, w: BalamaWord, pool: BalamaWor
       const meaning = honest ? w.definition : shuffle(others)[0].definition;
       return { ...q, source, text: `«${w.text}» — ${meaning}`, options: [...TRUE_FALSE], correct: [honest ? 0 : 1] };
     }
-    case "ending": {
-      const [start, rest] = splitProverb(w.text);
-      return { ...q, source, text: `${start} ...`, ...withDistractors(rest, others.map((o) => splitProverb(o.text)[1])) };
-    }
+    case "ending":
+    case "blank":
+      return withPart({ ...q, source, full: w.text }, q.type === "blank" ? "word" : "end", pool.map((x) => ({ text: x.text })));
     default:
       return {
         ...q,

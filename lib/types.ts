@@ -53,6 +53,9 @@ export type LessonQuestion = {
   correct: number[];
   /** Правильный ответ для «write» (варианты через «|») и правильный мақал для «order» */
   answer: string;
+  /** Полный мақал и номера скрытых слов (ending/blank/write): из них собираются text и правильный ответ */
+  full: string;
+  hidden: number[];
   /** Пары для «match» */
   pairs: { left: string; right: string }[];
   /** Откуда заполнено (только для справки в админке) */

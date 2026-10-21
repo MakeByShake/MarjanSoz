@@ -47,7 +47,7 @@ export function LessonEditor({ id, libs, onBack }: { id: string; libs: Libraries
 function Editor({ initial, libs, onBack }: { initial: Lesson; libs: Libraries; onBack: () => void }) {
   const [lesson, setLesson] = useState(initial);
   const [save, setSave] = useState<SaveState>("saved");
-  const [openTasks, setOpenTasks] = useState<Set<string>>(() => new Set(initial.tasks.length === 1 ? [initial.tasks[0].id] : []));
+  const [openTasks, setOpenTasks] = useState<Set<string>>(() => new Set(initial.tasks.map((t) => t.id)));
   const [openQuestion, setOpenQuestion] = useState<string | null>(null);
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [pickingStudy, setPickingStudy] = useState(false);
@@ -216,7 +216,23 @@ function Editor({ initial, libs, onBack }: { initial: Lesson; libs: Libraries; o
           </button>
         }
       >
-        {lesson.tasks.length === 0 && <p className="text-muted">Тапсырмалар әлі жоқ. «＋ Тапсырма қосу» басыңыз.</p>}
+        {lesson.tasks.length === 0 && (
+          <div className="rounded-2xl border-2 border-dashed border-line p-8 text-center">
+            <p className="mb-4 text-muted">Сұрақтар әлі жоқ.</p>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => {
+                const task = { ...emptyTask(), title: "1-тапсырма" };
+                update((l) => ({ ...l, tasks: [task] }));
+                setOpenTasks(new Set([task.id]));
+                setAddingTo(task.id);
+              }}
+            >
+              ＋ Сұрақ қосу
+            </button>
+          </div>
+        )}
         <ol className="space-y-4">
           {lesson.tasks.map((task, ti) => {
             const open = openTasks.has(task.id);
@@ -241,9 +257,10 @@ function Editor({ initial, libs, onBack }: { initial: Lesson; libs: Libraries; o
                   </span>
                   <button type="button" onClick={toggleOpen} className="min-w-0 flex-1 text-left">
                     <span className="font-semibold">{task.title || "Атаусыз тапсырма"}</span>{" "}
-                    <span className="text-sm text-muted">
-                      · {taskMax(task)} балл · {task.questions.length} сұрақ
-                    </span>
+                    <span className="ml-1 rounded-full bg-primary px-2 py-0.5 text-xs text-white dark:bg-gold dark:text-bg">
+                      {task.questions.length} сұрақ
+                    </span>{" "}
+                    <span className="text-sm text-muted">{taskMax(task)} балл</span>
                     {issues > 0 && <span className="ml-2 text-xs text-red-800 dark:text-red-200">⚠️ {issues} сұрақ толық емес</span>}
                   </button>
                   <button type="button" className={smallBtn} onClick={toggleOpen} aria-expanded={open}>
