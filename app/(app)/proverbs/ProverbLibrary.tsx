@@ -3,11 +3,13 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { Pagination, PagerCompact } from "@/components/Pagination";
 import { SearchIcon } from "@/components/Icons";
+import { Masonry } from "@/components/Masonry";
 import { AiExplainButton } from "@/components/MarjanUstaz";
 import { EmptyState, LoadError, Loading } from "@/components/ui";
 import { normalize, topicMeta, useLibrary } from "@/lib/proverbs";
 
 const PAGE_SIZE = 20;
+const COLUMNS = [[768, 2]] as const;
 
 export function ProverbLibrary() {
   const { proverbs, topics, loading, error } = useLibrary();
@@ -86,12 +88,13 @@ export function ProverbLibrary() {
       {filtered.length === 0 ? (
         <EmptyState icon={<SearchIcon size={24} />} title="Ештеңе табылмады" text="Басқа сөзбен іздеп көріңіз." />
       ) : (
-        <ul className="grid items-start gap-4 md:grid-cols-2">
-          {visible.map((p) => (
-            <li
-              key={p.id}
-              className="card relative flex flex-col overflow-hidden p-6 pl-14 [content-visibility:auto] [contain-intrinsic-size:auto_220px]"
-            >
+        <Masonry
+          items={visible}
+          breakpoints={COLUMNS}
+          getKey={(p) => p.id}
+          itemClassName="card relative flex flex-col overflow-hidden p-6 pl-14"
+          renderItem={(p) => (
+            <>
               <span aria-hidden="true" className="absolute top-3 left-5 font-serif text-5xl leading-none text-gold/70">
                 «
               </span>
@@ -108,9 +111,9 @@ export function ProverbLibrary() {
               <div className="mt-3">
                 <AiExplainButton kind="proverb" id={p.id} />
               </div>
-            </li>
-          ))}
-        </ul>
+            </>
+          )}
+        />
       )}
 
       <Pagination page={current} pages={pages} onPage={goTo} />

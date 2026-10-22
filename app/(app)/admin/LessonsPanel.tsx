@@ -4,7 +4,8 @@ import { useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Pagination } from "@/components/Pagination";
 import { Loading } from "@/components/ui";
-import { createLesson, deleteLesson, useLessons } from "@/lib/lessons";
+import { createLesson, deleteLesson, saveLesson, useLessons } from "@/lib/lessons";
+import { buildSampleLesson, SAMPLE_LESSON_ID } from "@/lib/sampleLesson";
 import { taskMax } from "@/lib/questions";
 import type { Lesson } from "@/lib/types";
 import { LessonEditor } from "./LessonEditor";
@@ -45,20 +46,36 @@ export function LessonsPanel({ libs }: { libs: Libraries }) {
       <Panel
         title={`Сабақтар (${list.length})`}
         action={
-          <button
-            type="button"
-            className="btn-primary"
-            disabled={busy}
-            onClick={async () => {
-              let id = "";
-              const ok = await run(async () => {
-                id = await createLesson(Math.max(0, ...list.map((l) => l.order)) + 1);
-              }, "Сабақ құрылды");
-              if (ok) setEditing(id);
-            }}
-          >
-            ＋ Сабақ қосу
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={busy}
+              title="Барлық 9 сұрақ түрі бар дайын сабақ (черновик) құрылады"
+              onClick={async () => {
+                const exists = list.some((l) => l.id === SAMPLE_LESSON_ID);
+                const order = exists ? list.find((l) => l.id === SAMPLE_LESSON_ID)!.order : Math.max(0, ...list.map((l) => l.order)) + 1;
+                const ok = await run(() => saveLesson(buildSampleLesson(order)), exists ? "Тест сабақ жаңартылды" : "Тест сабақ құрылды");
+                if (ok) lessons.reload();
+              }}
+            >
+              🧪 Тест сабақ (9 түр)
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={busy}
+              onClick={async () => {
+                let id = "";
+                const ok = await run(async () => {
+                  id = await createLesson(Math.max(0, ...list.map((l) => l.order)) + 1);
+                }, "Сабақ құрылды");
+                if (ok) setEditing(id);
+              }}
+            >
+              ＋ Сабақ қосу
+            </button>
+          </div>
         }
       >
         <p className="mb-4 text-sm text-muted">
