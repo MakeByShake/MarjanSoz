@@ -63,3 +63,28 @@ export async function getDocument<T>(path: string, idToken?: string | null): Pro
   const data = (await res.json()) as { fields?: Record<string, FsValue> };
   return decodeFields(data.fields ?? {}) as T;
 }
+
+/** Документы коллекции, где поле равно значению (Firestore runQuery). Действуют правила firestore.rules. */
+export async function queryEqual<T>(collection: string, field: string, value: string | boolean, idToken?: string | null): Promise<(T & { id: string })[]> {
+  const res = await fetch(`${FIRESTORE_URL}:runQuery?key=${FIREBASE_WEB_API_KEY}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}) },
+    body: JSON.stringify({
+      structuredQuery: {
+        from: [{ collectionId: collection }],
+        where: {
+          fieldFilter: {
+            field: { fieldPath: field },
+            op: "EQUAL",
+            value: typeof value === "boolean" ? { booleanValue: value } : { stringValue: value },
+          },
+        },
+      },
+    }),
+    cache: "no-store",
+  });
+  if (res.status === 403) return [];
+  if (!res.ok) throw new Error(`Firestore ${res.status}`);
+  const rows = (await res.json()) as { document?: { name: string; fields?: Record<string, FsValue> } }[];
+  return rows.flatMap((r) => (r.document ? [{ ...decodeFields(r.document.fields ?? {}), id: r.document.name.split("/").pop() } as T & { id: string }] : []));
+}

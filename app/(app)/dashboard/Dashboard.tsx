@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRightIcon, BookIcon, QuoteIcon, ScrollIcon, TrophyIcon } from "@/components/Icons";
-import { AiExplainButton } from "@/components/MarjanUstaz";
+import { ArrowRightIcon, BookIcon, ChatIcon, QuoteIcon, ScrollIcon, TrophyIcon } from "@/components/Icons";
+import { AiExplainButton } from "@/components/MarjanApai";
 import { OrnamentBand, Rhomb, Shanyrak } from "@/components/Ornament";
 import { ProgressBar, SectionTitle, Spinner } from "@/components/ui";
 import { useLessons, useMyResults } from "@/lib/lessons";
@@ -13,6 +13,7 @@ const ACTIONS = [
   { href: "/lessons", Icon: BookIcon, title: "Сабақтар", text: "Мақалдарды оқып, тапсырмаларды орындаңыз" },
   { href: "/proverbs", Icon: ScrollIcon, title: "Мақалдар кітапханасы", text: "Мыңдаған мақал — түсіндірмесімен" },
   { href: "/balama", Icon: QuoteIcon, title: "Балама сөздер", text: "Тұрақты сөз тіркестерінің мағынасы" },
+  { href: "/apai", Icon: ChatIcon, title: "Маржан апай", text: "Жағдайыңа мақал табады, қателеріңді талдайды" },
   { href: "/rating", Icon: TrophyIcon, title: "Рейтинг", text: "Ең белсенді оқушылар тізімі" },
 ];
 
@@ -117,9 +118,9 @@ export function Dashboard() {
 
       <section aria-labelledby="sections-title">
         <SectionTitle id="sections-title" kicker="Бөлімдер" title="Не үйренеміз бүгін?" />
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {ACTIONS.map(({ href, Icon, title, text }) => (
-            <li key={href}>
+            <li key={href} className="sm:last:col-span-2 lg:last:col-span-1">
               <Link href={href} className="card-link group flex h-full flex-col p-5">
                 <span className="grid h-12 w-12 place-items-center rounded-xl border border-gold/40 bg-gold/10 text-gold-text">
                   <Icon size={28} />

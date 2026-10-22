@@ -6,6 +6,7 @@ const LINKS = [
   { href: "/lessons", label: "Сабақтар" },
   { href: "/proverbs", label: "Мақалдар кітапханасы" },
   { href: "/balama", label: "Балама сөздер" },
+  { href: "/apai", label: "Маржан апай" },
   { href: "/rating", label: "Рейтинг" },
 ];
 

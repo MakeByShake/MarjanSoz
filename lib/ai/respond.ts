@@ -1,4 +1,4 @@
-import { getProvider, QuotaError } from "./provider";
+import { type GenerateRequest, getProvider, QuotaError } from "./provider";
 import { cacheGet, cacheSet, limitsAvailable, takeQuota } from "./guard";
 
 /*
@@ -6,15 +6,15 @@ import { cacheGet, cacheSet, limitsAvailable, takeQuota } from "./guard";
   Когда ИИ недоступен, ученик всё равно получает ответ — заготовку из базы и пояснение (заголовок X-AI-Notice).
 */
 
-type Reason = "demo" | "user" | "day" | "minute" | "quota" | "error";
+export type Reason = "demo" | "user" | "day" | "minute" | "quota" | "error";
 
 const NOTICES: Record<Reason, string> = {
-  demo: "Маржан ұстаз әзірге қосылмаған. Базадағы түсіндірме көрсетілді.",
-  user: "Бүгінгі ИИ сұрақтарың таусылды — ертең қайта келіңіз! Әзірге базадағы түсіндірме:",
-  day: "Сайттың бүгінгі ИИ лимиті таусылды, ертең қайта қосылады. Әзірге базадағы түсіндірме:",
-  minute: "Қазір сұрақ өте көп. Бір минуттан кейін қайталап көріңіз. Әзірге базадағы түсіндірме:",
-  quota: "ИИ лимиті уақытша таусылды. Әзірге базадағы түсіндірме:",
-  error: "Маржан ұстаз жауап бере алмады. Әзірге базадағы түсіндірме:",
+  demo: "Маржан апай әзірге қосылмаған. Базадағы мәлімет көрсетілді.",
+  user: "Бүгінгі ИИ сұрақтарың таусылды — ертең қайта келіңіз! Әзірге базадағы мәлімет:",
+  day: "Сайттың бүгінгі ИИ лимиті таусылды, ертең қайта қосылады. Әзірге базадағы мәлімет:",
+  minute: "Қазір сұрақ өте көп. Бір минуттан кейін қайталап көріңіз. Әзірге базадағы мәлімет:",
+  quota: "ИИ лимиті уақытша таусылды. Әзірге базадағы мәлімет:",
+  error: "Маржан апай жауап бере алмады. Әзірге базадағы мәлімет:",
 };
 
 const TEXT_HEADERS = { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" };
@@ -36,15 +36,16 @@ export function jsonError(status: number, error: string) {
 export async function respondWithAI(opts: {
   request: Request;
   uid: string;
-  cacheKey: string;
+  /** Без ключа ответ не кэшируется (чат) */
+  cacheKey?: string;
   system: string;
-  prompt: string;
+  prompt: GenerateRequest["prompt"];
   /** Ответ из базы на случай, когда ИИ недоступен */
   fallback: string;
 }): Promise<Response> {
   const { request, uid, cacheKey, system, prompt, fallback } = opts;
 
-  const cached = await cacheGet(cacheKey);
+  const cached = cacheKey ? await cacheGet(cacheKey) : null;
   if (cached) return textResponse(cached, "cache");
 
   const provider = getProvider();
@@ -75,7 +76,7 @@ export async function respondWithAI(opts: {
         const next = await iterator.next();
         if (next.done) {
           controller.close();
-          if (full.trim().length > 40) await cacheSet(cacheKey, full);
+          if (cacheKey && full.trim().length > 40) await cacheSet(cacheKey, full);
           return;
         }
         full += next.value;

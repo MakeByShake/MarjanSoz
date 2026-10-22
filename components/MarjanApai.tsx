@@ -9,21 +9,21 @@ import { LogoMark } from "./Logo";
 import { Spinner } from "./ui";
 
 /*
-  Маржан ұстаз: кнопка → панель с ответом ИИ. Ответ идёт потоком, язык выбирается (Қаз / Рус / Eng),
+  Маржан апай: кнопка → панель с ответом ИИ. Ответ идёт потоком, язык выбирается (Қаз / Рус / Eng),
   запрос можно остановить. variant="dark" — для тёмной панели «Күннің мақалы».
 */
 
 type Variant = "light" | "dark";
 type Request = { path: "/api/ai/explain" | "/api/ai/mistake"; body: Record<string, unknown> };
 
-const LANGS: { id: AiLang; label: string }[] = [
+export const LANGS: { id: AiLang; label: string }[] = [
   { id: "kk", label: "Қаз" },
   { id: "ru", label: "Рус" },
   { id: "en", label: "Eng" },
 ];
 
 export function AiExplainButton({ kind, id, variant = "light" }: { kind: "proverb" | "balama"; id: string; variant?: Variant }) {
-  return <AiPanel request={{ path: "/api/ai/explain", body: { kind, id } }} label="Маржан ұстаз түсіндірсін" variant={variant} />;
+  return <AiPanel request={{ path: "/api/ai/explain", body: { kind, id } }} label="Маржан апай түсіндірсін" variant={variant} />;
 }
 
 export function AiMistakeButton({ lessonId, questionId, answer }: { lessonId: string; questionId: string; answer: Answer }) {
@@ -56,7 +56,7 @@ function AiPanel({ request, label, variant }: { request: Request; label: string;
       const reply = await streamAI(request.path, { ...request.body, lang: nextLang }, setText, ctrl.signal);
       if (!ctrl.signal.aborted) setNotice(reply.notice);
     } catch (e) {
-      if (!ctrl.signal.aborted) setError(e instanceof AiError ? e.message : "Маржан ұстаз жауап бере алмады. Қайталап көріңіз.");
+      if (!ctrl.signal.aborted) setError(e instanceof AiError ? e.message : "Маржан апай жауап бере алмады. Қайталап көріңіз.");
     } finally {
       if (abort.current === ctrl) setBusy(false);
     }
@@ -92,37 +92,22 @@ function AiPanel({ request, label, variant }: { request: Request; label: string;
 
   return (
     <section
-      aria-label="Маржан ұстаз"
+      aria-label="Маржан апай"
       aria-busy={busy}
       className={`rounded-2xl border text-left ${dark ? "border-white/15 bg-white/6 text-on-panel" : "border-gold/40 bg-bg text-text"}`}
     >
       <div className={`flex flex-wrap items-center gap-2 border-b px-4 py-2.5 ${dark ? "border-white/10" : "border-line"}`}>
         <LogoMark className="h-7 w-7 shrink-0" />
-        <span className={`font-serif font-semibold ${dark ? "" : "text-heading"}`}>Маржан ұстаз</span>
-        <div role="group" aria-label="Жауап тілі" className={`ml-auto flex rounded-lg border p-0.5 text-xs ${dark ? "border-white/15" : "border-line"}`}>
-          {LANGS.map((l) => (
-            <button
-              key={l.id}
-              type="button"
-              aria-pressed={lang === l.id}
-              onClick={() => {
-                saveLang(l.id);
-                ask(l.id);
-              }}
-              className={`cursor-pointer rounded-md px-2.5 py-1 font-medium transition-colors ${
-                lang === l.id
-                  ? dark
-                    ? "bg-gold text-[#1a1608]"
-                    : "bg-primary text-white dark:bg-gold dark:text-[#1a1608]"
-                  : dark
-                    ? "text-on-panel/70 hover:text-on-panel"
-                    : "text-muted hover:text-heading"
-              }`}
-            >
-              {l.label}
-            </button>
-          ))}
-        </div>
+        <span className={`font-serif font-semibold ${dark ? "" : "text-heading"}`}>Маржан апай</span>
+        <LangToggle
+          value={lang}
+          dark={dark}
+          className="ml-auto"
+          onChange={(l) => {
+            saveLang(l);
+            ask(l);
+          }}
+        />
         <button
           type="button"
           onClick={() => {
@@ -150,7 +135,7 @@ function AiPanel({ request, label, variant }: { request: Request; label: string;
         ) : busy ? (
           <p className={`flex items-center gap-2 ${dark ? "text-on-panel/75" : "text-muted"}`}>
             <Spinner className="h-4 w-4" />
-            Маржан ұстаз ойланып жатыр…
+            Маржан апай ойланып жатыр…
           </p>
         ) : null}
         {busy && (
@@ -167,8 +152,35 @@ function AiPanel({ request, label, variant }: { request: Request; label: string;
   );
 }
 
+/** Қаз / Рус / Eng — язык ответа Маржан апай */
+export function LangToggle({ value, onChange, dark = false, className = "" }: { value: AiLang; onChange: (l: AiLang) => void; dark?: boolean; className?: string }) {
+  return (
+    <div role="group" aria-label="Жауап тілі" className={`flex rounded-lg border p-0.5 text-xs ${dark ? "border-white/15" : "border-line"} ${className}`}>
+      {LANGS.map((l) => (
+        <button
+          key={l.id}
+          type="button"
+          aria-pressed={value === l.id}
+          onClick={() => onChange(l.id)}
+          className={`cursor-pointer rounded-md px-2.5 py-1 font-medium transition-colors ${
+            value === l.id
+              ? dark
+                ? "bg-gold text-[#1a1608]"
+                : "bg-primary text-white dark:bg-gold dark:text-[#1a1608]"
+              : dark
+                ? "text-on-panel/70 hover:text-on-panel"
+                : "text-muted hover:text-heading"
+          }`}
+        >
+          {l.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** Ответ ИИ: строки «## Заголовок» — подзаголовки, **жирный** — выделение. HTML не вставляем. */
-function FormattedText({ text, dark }: { text: string; dark: boolean }) {
+export function FormattedText({ text, dark = false }: { text: string; dark?: boolean }) {
   const blocks = text.split(/\n+/).filter((l) => l.trim());
   return (
     <div className="space-y-1.5">

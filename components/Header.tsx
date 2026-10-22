@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { logout, useCurrentUser } from "@/lib/user";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { CloseIcon, GearIcon, LogOutIcon, MenuIcon, UserIcon } from "./Icons";
+import { CloseIcon, GearIcon, LogOutIcon, MenuIcon, SparklesIcon, UserIcon } from "./Icons";
 import { Logo } from "./Logo";
 import { OrnamentBand } from "./Ornament";
 import { ThemeToggle } from "./ThemeToggle";
@@ -15,6 +15,7 @@ const LINKS = [
   { href: "/lessons", label: "Сабақтар" },
   { href: "/proverbs", label: "Мақалдар" },
   { href: "/balama", label: "Балама сөздер" },
+  { href: "/apai", label: "Маржан апай", ai: true },
   { href: "/rating", label: "Рейтинг" },
 ];
 
@@ -45,7 +46,7 @@ export function Header() {
 
   // Активный пункт отмечен золотой чертой снизу, а не заливкой
   const desktopLink = (href: string) =>
-    `relative flex items-center gap-1.5 rounded-lg px-3 py-2 text-[15px] font-medium transition-colors after:absolute after:inset-x-3 after:-bottom-3 after:h-0.5 after:rounded-full after:transition-colors ${
+    `relative flex items-center gap-1.5 rounded-lg px-2 py-2 text-[14px] font-medium whitespace-nowrap xl:px-3 xl:text-[15px] transition-colors after:absolute after:inset-x-2 after:-bottom-3 xl:after:inset-x-3 after:h-0.5 after:rounded-full after:transition-colors ${
       isActive(href) ? "text-heading after:bg-gold" : "text-muted hover:text-heading after:bg-transparent"
     }`;
   const mobileLink = (href: string) =>
@@ -63,6 +64,7 @@ export function Header() {
         <nav aria-label="Негізгі мәзір" className="hidden items-center gap-0.5 lg:flex">
           {LINKS.map((l) => (
             <Link key={l.href} href={l.href} className={desktopLink(l.href)} aria-current={current(l.href)}>
+              {l.ai && <SparklesIcon size={16} className="text-gold" />}
               {l.label}
             </Link>
           ))}
@@ -86,7 +88,7 @@ export function Header() {
             }`}
           >
             <UserIcon size={17} />
-            {user?.username?.split(/\s+/)[0] || "Профиль"}
+            <span className="lg:max-xl:sr-only">{user?.username?.split(/\s+/)[0] || "Профиль"}</span>
           </Link>
           <button
             type="button"
@@ -116,6 +118,7 @@ export function Header() {
             {LINKS.map((l) => (
               <li key={l.href}>
                 <Link href={l.href} className={mobileLink(l.href)} aria-current={current(l.href)}>
+                  {l.ai && <SparklesIcon size={18} className="text-gold" />}
                   {l.label}
                 </Link>
               </li>

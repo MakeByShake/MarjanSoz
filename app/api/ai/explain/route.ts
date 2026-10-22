@@ -8,7 +8,7 @@ import { bearer, verifyIdToken } from "@/lib/firebaseRest";
 
 /*
   POST /api/ai/explain { kind: "proverb" | "balama", id, lang } + Authorization: Bearer <ID-токен>
-  Маржан ұстаз объясняет мақал или балама сөз из нашей базы. Ответ — поток текста.
+  Маржан апай объясняет мақал или балама сөз из нашей базы. Ответ — поток текста.
 */
 
 export const maxDuration = 60;
@@ -22,7 +22,7 @@ const Body = z.object({
 export async function POST(request: Request) {
   const token = bearer(request);
   const uid = token ? await verifyIdToken(token).catch(() => null) : null;
-  if (!uid) return jsonError(401, "Маржан ұстазды пайдалану үшін аккаунтқа кіріңіз.");
+  if (!uid) return jsonError(401, "Маржан апайды пайдалану үшін аккаунтқа кіріңіз.");
 
   const parsed = Body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return jsonError(400, "Сұрау дұрыс емес.");

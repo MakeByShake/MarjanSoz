@@ -7,6 +7,7 @@ import {
   BookOpenText,
   CaretDown,
   ChatTeardropText,
+  ChatsCircle,
   Check,
   Compass,
   Crown,
@@ -15,7 +16,10 @@ import {
   List,
   Lock,
   MagnifyingGlass,
+  PaperPlaneRight,
+  Plus,
   Moon,
+  Notebook,
   SealCheck,
   SignOut,
   Scroll,
@@ -53,6 +57,8 @@ export const SparklesIcon = make(Sparkle, "duotone");
 export const GemIcon = make(Diamond, "duotone");
 export const BadgeCheckIcon = make(SealCheck, "duotone");
 export const CompassIcon = make(Compass, "duotone");
+export const ChatIcon = make(ChatsCircle, "duotone");
+export const NotebookIcon = make(Notebook, "duotone");
 
 // Служебные
 export const UserIcon = make(User, "regular");
@@ -69,3 +75,5 @@ export const LockIcon = make(Lock, "duotone");
 export const SearchIcon = make(MagnifyingGlass, "regular");
 export const ChevronDownIcon = make(CaretDown, "regular");
 export const RefreshIcon = make(ArrowsClockwise, "regular");
+export const SendIcon = make(PaperPlaneRight, "fill");
+export const PlusIcon = make(Plus, "regular");

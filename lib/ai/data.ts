@@ -31,10 +31,17 @@ export async function findProverb(id: string): Promise<Proverb | null> {
   return (await proverbsById()).get(id) ?? null;
 }
 
-export async function findBalama(id: string): Promise<BalamaWord | null> {
+export async function allProverbs(): Promise<Map<string, Proverb>> {
+  return proverbsById();
+}
+
+export async function allBalama(): Promise<BalamaWord[]> {
   const doc = await getDocument<{ items: BalamaWord[] }>("meta/balama");
-  const items = doc?.items ?? seedBalama.map((w) => ({ ...w, id: String(w.id) }));
-  return items.find((w) => String(w.id) === id) ?? null;
+  return (doc?.items ?? seedBalama).map((w) => ({ ...w, id: String(w.id) }));
+}
+
+export async function findBalama(id: string): Promise<BalamaWord | null> {
+  return (await allBalama()).find((w) => w.id === id) ?? null;
 }
 
 /** Вопрос урока. Токен ученика: черновики урока видит только админ (правила Firestore). */

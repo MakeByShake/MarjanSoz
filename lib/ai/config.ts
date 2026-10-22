@@ -6,11 +6,13 @@
 export const AI_MODELS = {
   /** Основная: быстрая и дешёвая, хорошо пишет по-казахски */
   text: "gemini-3.5-flash-lite",
+  /** Смысловые векторы для поиска мақалов по ситуации (scripts/embed-proverbs.mjs) */
+  embed: "gemini-embedding-2",
 } as const;
 
 export const AI_LIMITS = {
-  /** Запросов к ИИ в сутки на одного ученика (ответы из кэша не считаются) */
-  perUserDaily: 10,
+  /** Запросов к ИИ в сутки на одного ученика: объяснения, ошибки, поиск и чат вместе (ответы из кэша не считаются) */
+  perUserDaily: 20,
   /** Запросов к ИИ в сутки на весь сайт — запас под бесплатную квоту Gemini */
   globalDaily: 800,
   /** Запросов в минуту на весь сайт — под минутный лимит бесплатного тарифа */
@@ -21,6 +23,10 @@ export const AI_LIMITS = {
   cacheTtl: 60 * 60 * 24 * 30,
   /** Ограничение длины ответа модели */
   maxOutputTokens: 900,
+  /** Длина одного сообщения ученика в чате */
+  maxMessage: 600,
+  /** Сколько последних сообщений чата отправляем модели */
+  maxHistory: 10,
 } as const;
 
 /** Языки, на которых ИИ умеет отвечать */
@@ -28,4 +34,4 @@ export const AI_LANGS = ["kk", "ru", "en"] as const;
 export type AiLang = (typeof AI_LANGS)[number];
 
 /** Версия промптов: при их изменении старый кэш перестаёт использоваться */
-export const PROMPT_VERSION = 1;
+export const PROMPT_VERSION = 2;

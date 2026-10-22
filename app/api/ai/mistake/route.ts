@@ -24,7 +24,7 @@ const Body = z.object({
 export async function POST(request: Request) {
   const token = bearer(request);
   const uid = token ? await verifyIdToken(token).catch(() => null) : null;
-  if (!uid || !token) return jsonError(401, "Маржан ұстазды пайдалану үшін аккаунтқа кіріңіз.");
+  if (!uid || !token) return jsonError(401, "Маржан апайды пайдалану үшін аккаунтқа кіріңіз.");
 
   const parsed = Body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return jsonError(400, "Сұрау дұрыс емес.");

@@ -3,7 +3,7 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { ChevronDownIcon, SearchIcon } from "@/components/Icons";
 import { Masonry } from "@/components/Masonry";
-import { AiExplainButton } from "@/components/MarjanUstaz";
+import { AiExplainButton } from "@/components/MarjanApai";
 import { EmptyState } from "@/components/ui";
 import { useBalama } from "@/lib/balama";
 import { normalize } from "@/lib/proverbs";

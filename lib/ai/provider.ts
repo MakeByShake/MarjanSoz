@@ -6,12 +6,16 @@ import { AI_LIMITS, AI_MODELS } from "./config";
   поэтому замена Gemini на другой API — это новая реализация AIProvider, без правки роутов.
 */
 
+export type ChatTurn = { role: "user" | "model"; text: string };
+
 export type GenerateRequest = {
   /** Инструкции модели */
   system: string;
-  /** Данные задачи (мақал, вопрос, ответ ученика) */
-  prompt: string;
+  /** Данные задачи (мақал, вопрос, ответ ученика) или переписка чата */
+  prompt: string | ChatTurn[];
   maxTokens?: number;
+  /** Ответ строго в JSON */
+  json?: boolean;
   signal?: AbortSignal;
 };
 
@@ -19,6 +23,8 @@ export interface AIProvider {
   readonly name: string;
   generate(req: GenerateRequest): Promise<string>;
   stream(req: GenerateRequest): AsyncIterable<string>;
+  /** Нормированный смысловой вектор поискового запроса */
+  embedQuery(text: string, dims: number): Promise<Float32Array>;
 }
 
 /** Квота или лимит провайдера исчерпаны — роут покажет ответ из базы вместо ошибки. */
@@ -35,13 +41,14 @@ class GeminiProvider implements AIProvider {
   private params(req: GenerateRequest) {
     return {
       model: AI_MODELS.text,
-      contents: req.prompt,
+      contents: typeof req.prompt === "string" ? req.prompt : req.prompt.map((t) => ({ role: t.role, parts: [{ text: t.text }] })),
       config: {
         systemInstruction: req.system,
         // Объяснения короткие: глубокое «размышление» не нужно и тратит квоту
         thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
         maxOutputTokens: req.maxTokens ?? AI_LIMITS.maxOutputTokens,
         temperature: 0.4,
+        ...(req.json ? { responseMimeType: "application/json" } : {}),
         abortSignal: req.signal,
       },
     };
@@ -62,6 +69,22 @@ class GeminiProvider implements AIProvider {
       for await (const chunk of stream) {
         if (chunk.text) yield chunk.text;
       }
+    } catch (e) {
+      throw wrap(e);
+    }
+  }
+
+  async embedQuery(text: string, dims: number) {
+    try {
+      const res = await this.client.models.embedContent({
+        model: AI_MODELS.embed,
+        // gemini-embedding-2: задача пишется в тексте (мақалы посчитаны как «title: none | text: …»)
+        contents: `task: search result | query: ${text}`,
+        config: { outputDimensionality: dims },
+      });
+      const values = res.embeddings?.[0]?.values ?? [];
+      const norm = Math.hypot(...values) || 1;
+      return Float32Array.from(values, (v) => v / norm);
     } catch (e) {
       throw wrap(e);
     }

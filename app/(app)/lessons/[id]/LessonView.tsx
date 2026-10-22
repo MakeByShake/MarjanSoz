@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowLeftIcon, ArrowRightIcon, BadgeCheckIcon, CheckIcon, CloseIcon, CompassIcon, RefreshIcon } from "@/components/Icons";
-import { AiMistakeButton } from "@/components/MarjanUstaz";
+import { AiMistakeButton } from "@/components/MarjanApai";
 import { Divider, OrnateCard } from "@/components/Ornament";
 import { BusyLabel, EmptyState, Loading, PageHeader, ProgressBar, SectionTitle } from "@/components/ui";
 import { effective, saveTaskScore, taskPassed, useLesson, useMyResults } from "@/lib/lessons";
+import { rememberMistakes } from "@/lib/ai/mistakes";
 import { useLibrary } from "@/lib/proverbs";
 import { type Answer, correctText, grade, orderWords, shuffle, taskMax, typeInfo } from "@/lib/questions";
 import type { Lesson, LessonQuestion, LessonTask } from "@/lib/types";
@@ -70,6 +71,13 @@ export function LessonView({ id }: { id: string }) {
 
   async function finish(task: LessonTask, items: Prepared[], answers: Answer[]) {
     const earned = items.reduce((s, it, i) => s + grade(it.q, answers[i]), 0);
+    // Ошибки запоминаем для Маржан апай (раздел «Маржан апай» → «Қателерімді талдайық»)
+    rememberMistakes(
+      user!.id,
+      lesson!.id,
+      items.map((it) => it.q.id),
+      items.flatMap((it, i) => (grade(it.q, answers[i]) < it.q.points ? [{ questionId: it.q.id, answer: answers[i], prompt: it.q.text || it.q.prompt }] : [])),
+    );
     setSaving(true);
     let saved = true;
     try {
