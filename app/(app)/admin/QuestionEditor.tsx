@@ -3,49 +3,45 @@
 import { useState } from "react";
 import type { IndexedProverb } from "@/lib/proverbs";
 import {
-  applyHidden,
+  applyBlank,
+  blankSource,
   changeType,
   fillFromBalama,
   fillFromProverb,
-  fullWords,
-  isPartType,
-  maskParts,
-  orderWords,
-  type Preset,
-  refillOptions,
-  withPreset,
+  orderCells,
   problem,
   QUESTION_TYPES,
+  refillOptions,
   typeInfo,
 } from "@/lib/questions";
-import type { BalamaWord, LessonQuestion, Proverb, Topic } from "@/lib/types";
+import type { BalamaWord, LessonQuestion, Topic } from "@/lib/types";
 import { LibraryPicker } from "./LibraryPicker";
 import { dangerBtn, NumberField, smallBtn, TextField } from "./shared";
 
 /** Подсказка-пример для каждого типа: как заполнить и что увидит ученик. */
 const EXAMPLES: Record<LessonQuestion["type"], { how: string; student: string }> = {
   ending: {
-    how: "«Мақал (толық)» өрісіне мақалды бөлмей жазыңыз → «Соңы» батырмасын басыңыз → қате нұсқалар кітапханадан өзі толады.",
-    student: "Өнер алды — …   [қызыл тіл]  [ақыл]  [еңбек]",
+    how: "Мақалдың басын ғана жазыңыз (соңынсыз). Төменгі нұсқалардың біреуіне дұрыс жалғасын, қалғандарына қате сөздерді жазып, дұрысын белгілеңіз.",
+    student: "Өнер алды — қызыл …   [тіл]  [ауыз]  [мұрын]  [көз]",
   },
   meaning: {
     how: "«Мақал / мәтін» өрісіне мақалды жазыңыз, нұсқаларға мағыналарды жазып, дұрысын белгілеңіз.",
     student: "«Өнер алды — қызыл тіл»   [Сөз — өнердің ең биігі]  [Еңбек адамды асырайды]",
   },
   blank: {
-    how: "Мақалды толық жазыңыз → жасыратын сөзді басыңыз (немесе «Ең ұзын сөз») → қате нұсқалар өзі толады.",
+    how: "Мақалды толық жазып, жасыратын сөзді тік сызықтардың ішіне алыңыз: Өнер алды — |қызыл| тіл. Сызықтардың ішіндегі сөз дұрыс нұсқа болады, оқушы оны көрмейді.",
     student: "Өнер алды — _____ тіл   [қызыл]  [ұзын]  [ащы]",
   },
   write: {
-    how: "Мақалды толық жазыңыз → «Соңы» батырмасын басыңыз. «Дұрыс жауап» өрісі өзі толады — «|» қою міндетті емес.",
-    student: "Өнер алды — …   (оқушы өзі жазады: қызыл тіл)",
+    how: "Мақалдың басын ғана жазыңыз, ал оқушы жазуы керек жалғасын «Дұрыс жауап» өрісіне жазыңыз.",
+    student: "Өнер алды — қызыл …   (оқушы өзі жазады: тіл)",
   },
   match: {
     how: "Әр жолдың сол жағына мақал, оң жағына оның мағынасы. Кемінде 2 жұп керек.",
     student: "Мақалдар мен мағыналар араласып беріледі, оқушы әрқайсысына мағынасын таңдайды.",
   },
   order: {
-    how: "Мақалды дұрыс ретпен жазыңыз — сөздерді оқушыға сайт өзі араластырады.",
+    how: "Әр ұяшыққа бір сөз жазыңыз, дұрыс ретпен. «＋ Сөз қосу» не Enter — жаңа ұяшық. Оқушыға ұяшықтар араласып беріледі.",
     student: "[тіл]  [Өнер]  [қызыл]  [алды]  →  Өнер алды қызыл тіл",
   },
   single: {
@@ -60,6 +56,28 @@ const EXAMPLES: Record<LessonQuestion["type"], { how: string; student: string }>
     how: "Тұжырымды жазып, «Дұрыс» не «Бұрыс» нұсқасын белгілеңіз.",
     student: "«Өнер алды — қызыл тіл» — еңбек туралы мақал.   [Дұрыс]  [Бұрыс]",
   },
+};
+
+/** Поле «text» для каждого типа: подпись, пример и подсказка. */
+const TEXT_FIELD: Record<LessonQuestion["type"], { label: string; placeholder: string; hint?: string }> = {
+  ending: { label: "Мақалдың басы (оқушы көреді)", placeholder: "Мысалы: Өнер алды — қызыл", hint: "Жалғасын мұнда жазбаңыз — ол төмендегі нұсқаларда болады." },
+  write: { label: "Мақалдың басы (оқушы көреді)", placeholder: "Мысалы: Өнер алды — қызыл", hint: "Жалғасын төмендегі «Дұрыс жауап» өрісіне жазыңыз." },
+  blank: { label: "", placeholder: "" },
+  meaning: { label: "Мақал", placeholder: "Мысалы: Өнер алды — қызыл тіл" },
+  single: { label: "Сұрақ мәтіні", placeholder: "Мысалы: «Өнер алды — қызыл тіл» мақалы не туралы?" },
+  multiple: { label: "Сұрақ мәтіні", placeholder: "Мысалы: Сөз туралы мақалдарды таңдаңыз" },
+  truefalse: { label: "Тұжырым", placeholder: "Мысалы: «Өнер алды — қызыл тіл» — еңбек туралы мақал." },
+  match: { label: "", placeholder: "" },
+  order: { label: "", placeholder: "" },
+};
+
+/** Примеры в пустых вариантах ответа. */
+const OPTION_EXAMPLES: Partial<Record<LessonQuestion["type"], string[]>> = {
+  ending: ["тіл", "ауыз", "мұрын", "көз"],
+  blank: ["қызыл", "ұзын", "ащы"],
+  meaning: ["Сөз — өнердің ең биігі", "Еңбек адамды асырайды", "Отанды сүю"],
+  single: ["Сөз өнері", "Еңбек", "Отан"],
+  multiple: ["Өнер алды — қызыл тіл", "Тіл — тас жарады", "Еңбек — ер азығы"],
 };
 
 /** loading — мақалы ещё догружаются (список пока пустой). */
@@ -91,8 +109,6 @@ export function QuestionEditor({
   const issue = problem(q);
   const preview = q.text || q.answer || q.pairs[0]?.left || "Сұрақ мәтіні жоқ";
   const set = <K extends keyof LessonQuestion>(k: K, v: LessonQuestion[K]) => onChange({ ...q, [k]: v });
-  // Старые вопросы без полного мақала редактируются как раньше, через поле «мәтін»
-  const usePart = isPartType(q.type) && (q.full.trim() !== "" || q.text.trim() === "");
 
   return (
     <li className="rounded-xl border border-line border-l-4 border-l-primary/40 bg-bg dark:border-l-gold/50">
@@ -158,55 +174,48 @@ export function QuestionEditor({
 
           <TextField label="Тапсырма (оқушыға көрінетін сұрақ)" value={q.prompt} onChange={(v) => set("prompt", v)} />
 
-          {usePart && <PartEditor q={q} onChange={onChange} pool={libs.proverbs} />}
-
-          {!usePart && info.shape !== "order" && info.shape !== "match" && (
-            <TextField
-              label={q.type === "blank" ? "Мәтін (бос орынды _____ деп белгілеңіз)" : q.type === "truefalse" ? "Тұжырым" : "Мақал / мәтін"}
-              value={q.text}
-              onChange={(v) => set("text", v)}
-              multiline
-              placeholder={
-                q.type === "blank"
-                  ? "Мысалы: Өнер алды — _____ тіл"
-                  : q.type === "truefalse"
-                    ? "Мысалы: «Өнер алды — қызыл тіл» — еңбек туралы мақал."
-                    : q.type === "meaning"
-                      ? "Мысалы: Өнер алды — қызыл тіл"
-                      : "Мысалы: «Өнер алды — қызыл тіл» мақалы не туралы?"
-              }
-            />
+          {q.type === "blank" ? (
+            <BlankEditor q={q} onChange={onChange} />
+          ) : (
+            info.shape !== "order" &&
+            info.shape !== "match" && (
+              <TextField
+                label={TEXT_FIELD[q.type].label}
+                value={q.text}
+                onChange={(v) => set("text", v)}
+                multiline
+                placeholder={TEXT_FIELD[q.type].placeholder}
+                hint={TEXT_FIELD[q.type].hint}
+              />
+            )
           )}
 
           {info.shape === "choice" && <ChoiceEditor q={q} onChange={onChange} />}
 
+          {(q.type === "ending" || q.type === "blank") && (
+            <button
+              type="button"
+              className={smallBtn}
+              disabled={!q.options[q.correct[0] ?? -1]?.trim()}
+              onClick={() => onChange(refillOptions(q, libs.proverbs))}
+            >
+              ⚡ Қате нұсқаларды кітапханадан толтыру
+            </button>
+          )}
+
           {info.shape === "write" && (
             <TextField
-              label={usePart ? "Дұрыс жауап (жасырылған бөліктен өзі толады)" : "Дұрыс жауап"}
+              label="Дұрыс жауап (оқушы жазуы керек бөлік)"
               value={q.answer}
               onChange={(v) => set("answer", v)}
-              placeholder="Мысалы: қызыл тіл"
-              hint="«|» мақалдың ішіне емес, тек осы жолға және тек бірнеше дұрыс жауап болса қойылады. Мысалы: қызыл тіл|тіл — оқушы «қызыл тіл» де, «тіл» де жазса, дұрыс саналады. Бас әріп пен тыныс белгілері есепке алынбайды."
+              placeholder="Мысалы: тіл"
+              hint="Бірнеше жауап дұрыс саналса, оларды «|» арқылы жазыңыз. Мысалы: қызыл тіл|тіл. Бас әріп пен тыныс белгілері есепке алынбайды."
             />
           )}
 
           {info.shape === "order" && (
             <>
-              <TextField
-                label="Дұрыс мақал (сөздер осы ретпен)"
-                value={q.answer}
-                onChange={(v) => set("answer", v)}
-                multiline
-                placeholder="Мысалы: Өнер алды — қызыл тіл"
-                hint="Мақалды дұрыс ретпен жазыңыз. Сөздер оқушыға араласып көрсетіледі."
-              />
-              <p className="flex flex-wrap gap-1 text-sm">
-                {orderWords(q).map((w, i) => (
-                  <span key={i} className="rounded border border-line bg-card px-2 py-0.5">
-                    {w}
-                  </span>
-                ))}
-              </p>
+              <OrderEditor q={q} onChange={onChange} />
               <TextField
                 label="Көмекші мәтін (міндетті емес)"
                 value={q.text}
@@ -240,8 +249,12 @@ export function QuestionEditor({
 function ChoiceEditor({ q, onChange }: { q: LessonQuestion; onChange: (q: LessonQuestion) => void }) {
   const many = q.type === "multiple";
   const fixed = q.type === "truefalse";
+  // В «Орын толтыру» правильный вариант берётся из |…| и меняется только там
+  const locked = q.type === "blank";
+  const examples = OPTION_EXAMPLES[q.type];
 
   function toggle(i: number) {
+    if (locked) return;
     if (!many) return onChange({ ...q, correct: [i] });
     const has = q.correct.includes(i);
     onChange({ ...q, correct: has ? q.correct.filter((x) => x !== i) : [...q.correct, i] });
@@ -258,7 +271,10 @@ function ChoiceEditor({ q, onChange }: { q: LessonQuestion; onChange: (q: Lesson
   return (
     <fieldset className="space-y-2">
       <legend className="mb-1 text-sm font-medium">
-        Жауап нұсқалары <span className="font-normal text-muted">({many ? "дұрыстарының бәрін белгілеңіз" : "дұрысын белгілеңіз"})</span>
+        Жауап нұсқалары{" "}
+        <span className="font-normal text-muted">
+          ({locked ? "дұрысы |...| ішінен өзі толады, қалғандарына қате сөздер жазыңыз" : many ? "дұрыстарының бәрін белгілеңіз" : "дұрысын белгілеңіз"})
+        </span>
       </legend>
       {q.options.map((o, i) => (
         <div key={i} className="flex items-center gap-2">
@@ -267,18 +283,20 @@ function ChoiceEditor({ q, onChange }: { q: LessonQuestion; onChange: (q: Lesson
             name={`correct-${q.id}`}
             checked={q.correct.includes(i)}
             onChange={() => toggle(i)}
+            disabled={locked && !q.correct.includes(i)}
             aria-label={`${i + 1}-нұсқа дұрыс`}
             className="h-5 w-5 shrink-0 accent-[var(--success)]"
           />
           <input
             value={o}
-            readOnly={fixed}
+            readOnly={fixed || (locked && q.correct.includes(i))}
+            title={locked && q.correct.includes(i) ? "Бұл нұсқа мақалдағы |...| ішінен өзі толады" : undefined}
             onChange={(e) => onChange({ ...q, options: q.options.map((x, j) => (j === i ? e.target.value : x)) })}
-            placeholder={fixed ? undefined : i === 0 ? "Мысалы: қызыл тіл" : `${i + 1}-нұсқа`}
+            placeholder={fixed ? undefined : examples?.[i] ? `Мысалы: ${examples[i]}` : `${i + 1}-нұсқа`}
             aria-label={`${i + 1}-нұсқа`}
             className={`field ${q.correct.includes(i) ? "border-success" : ""}`}
           />
-          {!fixed && (
+          {!fixed && !(locked && q.correct.includes(i)) && (
             <button type="button" className={dangerBtn} onClick={() => remove(i)} aria-label={`${i + 1}-нұсқаны жою`}>
               ✕
             </button>
@@ -338,102 +356,84 @@ function MatchEditor({ q, onChange }: { q: LessonQuestion; onChange: (q: LessonQ
   );
 }
 
-const PRESETS: { preset: Preset; label: string }[] = [
-  { preset: "start", label: "Басы" },
-  { preset: "middle", label: "Ортасы" },
-  { preset: "end", label: "Соңы" },
-  { preset: "word", label: "Ең ұзын сөз" },
-];
-
-/** Мақал целиком + какую часть скрыть: пресетом или кликом по словам. */
-function PartEditor({ q, onChange, pool }: { q: LessonQuestion; onChange: (q: LessonQuestion) => void; pool: Proverb[] }) {
-  const [preset, setPreset] = useState<Preset | "manual">(q.hidden.length ? "manual" : q.type === "blank" ? "word" : "end");
-  const words = fullWords(q);
-  const hidden = new Set(q.hidden);
-  const { answer } = words.length && q.hidden.length ? maskParts(words, q.hidden) : { answer: "" };
-  const isChoice = typeInfo(q.type).shape === "choice";
-
-  function setFull(full: string) {
-    const next = { ...q, full };
-    if (preset !== "manual") return onChange(withPreset(next, preset));
-    const valid = q.hidden.filter((i) => i < fullWords(next).length);
-    onChange(applyHidden({ ...next, hidden: valid }));
-  }
-
-  function toggleWord(i: number) {
-    setPreset("manual");
-    const next = hidden.has(i) ? q.hidden.filter((x) => x !== i) : [...q.hidden, i].sort((a, b) => a - b);
-    onChange(applyHidden({ ...q, hidden: next }));
-  }
-
+/** «Орын толтыру»: мақал, где пропуск отмечен прямыми скобками |…|. */
+function BlankEditor({ q, onChange }: { q: LessonQuestion; onChange: (q: LessonQuestion) => void }) {
+  const source = blankSource(q);
+  const right = q.text.includes("_____") ? q.options[q.correct[0] ?? -1] : "";
   return (
     <div className="space-y-3 rounded-xl border border-gold/50 bg-card p-4">
       <TextField
-        label="Мақал (толық)"
-        value={q.full}
-        onChange={setFull}
+        label="Мақал (жасырын сөзді |...| ішіне жазыңыз)"
+        value={source}
+        onChange={(v) => onChange(applyBlank(q, v))}
         multiline
-        placeholder="Мысалы: Өнер алды — қызыл тіл"
-        hint="Мақалды бөлмей, толық жазыңыз — «|» мұнда керек емес. Содан кейін төменде «Басы / Ортасы / Соңы» батырмасын басыңыз немесе жасыратын сөздерді басыңыз."
+        placeholder="Мысалы: Өнер алды — |қызыл| тіл"
+        hint="Тік сызықтардың ішіндегі сөз оқушыға _____ болып көрінеді және дұрыс нұсқа болады."
       />
-      {words.length > 0 && (
-        <>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium">Жасыру:</span>
-            {PRESETS.map((p) => (
-              <button
-                key={p.preset}
-                type="button"
-                aria-pressed={preset === p.preset}
-                onClick={() => {
-                  setPreset(p.preset);
-                  onChange(withPreset(q, p.preset));
-                }}
-                className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
-                  preset === p.preset
-                    ? "border-primary bg-primary text-white dark:border-gold dark:bg-gold dark:text-bg"
-                    : "border-line hover:border-primary dark:hover:border-gold"
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-          <div>
-            <p className="mb-1 text-xs text-muted">Немесе сөздерді басып, өзіңіз белгілеңіз (сары = жасырылады):</p>
-            <div className="flex flex-wrap gap-1.5">
-              {words.map((w, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  aria-pressed={hidden.has(i)}
-                  onClick={() => toggleWord(i)}
-                  className={`rounded-lg border px-2.5 py-1 transition ${
-                    hidden.has(i) ? "border-gold bg-gold/30 font-semibold" : "border-line bg-bg hover:border-primary dark:hover:border-gold"
-                  }`}
-                >
-                  {w}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="rounded-lg bg-bg p-3 text-sm">
-            <p>
-              <span className="text-muted">Оқушы көреді: </span>
-              <span className="font-serif italic text-proverb">{q.text}</span>
-            </p>
-            <p className="mt-1">
-              <span className="text-muted">Дұрыс жауап: </span>
-              <strong>{answer || "— сөз белгіленбеген"}</strong>
-            </p>
-          </div>
-          {isChoice && (
-            <button type="button" className={smallBtn} disabled={!answer} onClick={() => onChange(refillOptions(q, pool))}>
-              ⚡ Қате нұсқаларды кітапханадан толтыру
-            </button>
-          )}
-        </>
-      )}
+      <div className="rounded-lg bg-bg p-3 text-sm">
+        <p>
+          <span className="text-muted">Оқушы көреді: </span>
+          <span className="font-serif text-proverb italic">{q.text || "—"}</span>
+        </p>
+        <p className="mt-1">
+          <span className="text-muted">Дұрыс жауап: </span>
+          <strong>{right || "— сөз |...| ішіне алынбаған"}</strong>
+        </p>
+      </div>
     </div>
+  );
+}
+
+/** «Сөздерден құра»: по одному слову в ячейке, в правильном порядке. */
+function OrderEditor({ q, onChange }: { q: LessonQuestion; onChange: (q: LessonQuestion) => void }) {
+  const stored = orderCells(q);
+  const cells = stored.length ? stored : [""];
+  const [focusLast, setFocusLast] = useState(false);
+  const save = (next: string[]) => onChange({ ...q, answer: next.join("|") });
+  const add = () => {
+    setFocusLast(true);
+    save([...cells, ""]);
+  };
+
+  return (
+    <fieldset className="space-y-2">
+      <legend className="mb-1 text-sm font-medium">
+        Сөздер <span className="font-normal text-muted">(әр ұяшыққа бір сөз, дұрыс ретпен — оқушыға араласып беріледі)</span>
+      </legend>
+      <ol className="flex flex-wrap gap-2">
+        {cells.map((c, i) => (
+          <li key={i} className="flex items-center gap-1 rounded-xl border border-line bg-card py-1 pr-1 pl-2.5">
+            <span className="text-xs text-muted">{i + 1}</span>
+            <input
+              value={c}
+              autoFocus={focusLast && i === cells.length - 1}
+              onChange={(e) => save(cells.map((x, j) => (j === i ? e.target.value.replace(/\|/g, "") : x)))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  add();
+                }
+              }}
+              placeholder={["Өнер", "алды", "—", "қызыл", "тіл"][i] ?? "сөз"}
+              aria-label={`${i + 1}-сөз`}
+              size={Math.max(6, c.length + 1)}
+              className="min-w-0 rounded-lg bg-transparent px-1.5 py-1.5 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => save(cells.filter((_, j) => j !== i))}
+              disabled={cells.length === 1}
+              aria-label={`${i + 1}-сөзді жою`}
+              className="grid h-7 w-7 place-items-center rounded-lg text-muted transition-colors hover:bg-red-700/10 hover:text-red-700 disabled:opacity-30"
+            >
+              ✕
+            </button>
+          </li>
+        ))}
+      </ol>
+      <button type="button" className={smallBtn} onClick={add}>
+        ＋ Сөз қосу
+      </button>
+    </fieldset>
   );
 }
