@@ -3,6 +3,7 @@
 import { doc, getDoc } from "firebase/firestore";
 import { useSyncExternalStore } from "react";
 import { db } from "./firebase";
+import { normalize } from "./normalize";
 import type { Proverb, Topic } from "./types";
 
 /*
@@ -31,13 +32,7 @@ function setState(next: State) {
   listeners.forEach((l) => l());
 }
 
-export function normalize(value: string): string {
-  return value
-    .toLocaleLowerCase("kk")
-    .replace(/[«»"“”.,!?;:()—–-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
+export { normalize } from "./normalize";
 
 type Cached = { version: number; topics: Topic[]; chunks: Record<string, Proverb[]> };
 

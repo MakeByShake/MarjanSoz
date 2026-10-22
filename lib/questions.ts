@@ -1,4 +1,4 @@
-import { normalize } from "./proverbs";
+import { normalize } from "./normalize";
 import type { BalamaWord, LessonQuestion, LessonTask, Proverb, QuestionType } from "./types";
 
 /*
@@ -327,6 +327,19 @@ export function correctText(q: LessonQuestion): string {
   if (shape === "write") return q.answer.split("|")[0]?.trim() ?? "";
   if (shape === "order") return orderWords(q).join(" ");
   return q.pairs.map((p) => `${p.left} — ${p.right}`).join("\n");
+}
+
+/** Ответ ученика текстом — для разбора ошибки. */
+export function answerText(q: LessonQuestion, answer: Answer): string {
+  if (answer === undefined) return "";
+  if (typeof answer === "string") return answer;
+  const shape = typeInfo(q.type).shape;
+  if (shape === "choice") return answer.map((i) => q.options[i]).filter(Boolean).join("; ");
+  if (shape === "order") {
+    const words = orderWords(q);
+    return answer.map((i) => words[i]).filter(Boolean).join(" ");
+  }
+  return q.pairs.map((p, i) => `${p.left} — ${q.pairs[answer[i]]?.right ?? "?"}`).join("\n");
 }
 
 /** Что не так с вопросом (для подсказки в админке). null — всё в порядке. */

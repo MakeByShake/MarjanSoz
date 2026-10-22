@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowLeftIcon, ArrowRightIcon, BadgeCheckIcon, CheckIcon, CloseIcon, CompassIcon, RefreshIcon } from "@/components/Icons";
+import { AiMistakeButton } from "@/components/MarjanUstaz";
 import { Divider, OrnateCard } from "@/components/Ornament";
 import { BusyLabel, EmptyState, Loading, PageHeader, ProgressBar, SectionTitle } from "@/components/ui";
 import { effective, saveTaskScore, taskPassed, useLesson, useMyResults } from "@/lib/lessons";
@@ -170,7 +171,9 @@ export function LessonView({ id }: { id: string }) {
     const percent = taskMaxPoints ? Math.round((phase.score / taskMaxPoints) * 100) : 0;
     const passed = taskPassed(lesson, phase.task.id, phase.score);
     const best = result?.tasks[phase.task.id];
-    const mistakes = phase.items.map((it, i) => ({ it, got: grade(it.q, phase.answers[i]) })).filter((m) => m.got < m.it.q.points);
+    const mistakes = phase.items
+      .map((it, i) => ({ it, answer: phase.answers[i], got: grade(it.q, phase.answers[i]) }))
+      .filter((m) => m.got < m.it.q.points);
     const next = nextTask(lesson, phase.task.id);
     return (
       <>
@@ -201,7 +204,7 @@ export function LessonView({ id }: { id: string }) {
               <Divider />
               <h3 className="mb-3 font-serif text-lg font-semibold text-heading">Қателермен жұмыс</h3>
               <ul className="space-y-3">
-                {mistakes.map(({ it, got }) => (
+                {mistakes.map(({ it, answer, got }) => (
                   <li key={it.q.id} className="rounded-xl border border-line border-l-2 border-l-clay/60 bg-bg p-4">
                     <p className="font-medium">{it.q.prompt}</p>
                     {it.q.text && <p className="mt-1 font-serif italic text-proverb">{it.q.text}</p>}
@@ -209,6 +212,9 @@ export function LessonView({ id }: { id: string }) {
                       Дұрыс жауап: <strong>{correctText(it.q)}</strong>
                     </p>
                     {got > 0 && <p className="text-xs text-muted">Жартылай: {got}/{it.q.points} балл</p>}
+                    <div className="mt-3">
+                      <AiMistakeButton lessonId={lesson.id} questionId={it.q.id} answer={answer} />
+                    </div>
                   </li>
                 ))}
               </ul>

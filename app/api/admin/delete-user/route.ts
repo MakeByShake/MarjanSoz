@@ -1,4 +1,5 @@
 import type { App, ServiceAccount } from "firebase-admin/app";
+import { IDENTITY_URL as IDENTITY, verifyIdToken as callerUid } from "@/lib/firebaseRest";
 
 /*
   POST /api/admin/delete-user { uid } — полностью удаляет ученика: аккаунт входа, профиль, имя, результаты.
@@ -55,22 +56,6 @@ async function loadAdmin() {
 }
 
 type Admin = Awaited<ReturnType<typeof loadAdmin>>;
-
-// Публичный веб-ключ (тот же, что в lib/firebase.ts) — нужен только для проверки токена через Google
-const WEB_API_KEY = "AIzaSyC3n8GR6HBFRgSHr6IH3IJ2m9teCRx0Lxg";
-const IDENTITY = "https://identitytoolkit.googleapis.com/v1";
-
-/** uid вошедшего админа по его ID-токену. Google сам проверяет подпись и срок токена. */
-async function callerUid(idToken: string): Promise<string | null> {
-  const res = await fetch(`${IDENTITY}/accounts:lookup?key=${WEB_API_KEY}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ idToken }),
-  });
-  if (!res.ok) return null;
-  const data = (await res.json()) as { users?: { localId?: string }[] };
-  return data.users?.[0]?.localId ?? null;
-}
 
 /** Удаляет аккаунт входа от имени сервисного аккаунта. Уже удалённый аккаунт — не ошибка. */
 async function deleteAuthUser(app: App, uid: string) {

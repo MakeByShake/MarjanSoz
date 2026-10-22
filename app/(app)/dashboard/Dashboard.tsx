@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRightIcon, BookIcon, QuoteIcon, ScrollIcon, TrophyIcon } from "@/components/Icons";
+import { AiExplainButton } from "@/components/MarjanUstaz";
 import { OrnamentBand, Rhomb, Shanyrak } from "@/components/Ornament";
 import { ProgressBar, SectionTitle, Spinner } from "@/components/ui";
 import { useLessons, useMyResults } from "@/lib/lessons";
@@ -30,7 +31,7 @@ export function Dashboard() {
 
   return (
     <div className="space-y-12">
-      <div className="grid gap-5 lg:grid-cols-[1.75fr_1fr]">
+      <div className="grid items-start gap-5 lg:grid-cols-[1.75fr_1fr]">
         <section
           aria-labelledby="daily-title"
           className="relative isolate flex min-h-80 flex-col overflow-hidden rounded-3xl bg-panel text-on-panel"
@@ -69,6 +70,9 @@ export function Dashboard() {
                     </p>
                   )}
                 </figcaption>
+                <div className="mt-6 max-w-3xl">
+                  <AiExplainButton kind="proverb" id={daily.id} variant="dark" />
+                </div>
               </figure>
             )}
           </div>

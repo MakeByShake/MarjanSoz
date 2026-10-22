@@ -3,6 +3,7 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { Pagination, PagerCompact } from "@/components/Pagination";
 import { SearchIcon } from "@/components/Icons";
+import { AiExplainButton } from "@/components/MarjanUstaz";
 import { EmptyState, LoadError, Loading } from "@/components/ui";
 import { normalize, topicMeta, useLibrary } from "@/lib/proverbs";
 
@@ -85,7 +86,7 @@ export function ProverbLibrary() {
       {filtered.length === 0 ? (
         <EmptyState icon={<SearchIcon size={24} />} title="Ештеңе табылмады" text="Басқа сөзбен іздеп көріңіз." />
       ) : (
-        <ul className="grid gap-4 md:grid-cols-2">
+        <ul className="grid items-start gap-4 md:grid-cols-2">
           {visible.map((p) => (
             <li
               key={p.id}
@@ -104,6 +105,9 @@ export function ProverbLibrary() {
               <p className="mt-4 border-t border-line pt-3 text-xs font-semibold tracking-[0.14em] text-gold-text uppercase">
                 {topicMeta(topics, p.topic).title}
               </p>
+              <div className="mt-3">
+                <AiExplainButton kind="proverb" id={p.id} />
+              </div>
             </li>
           ))}
         </ul>

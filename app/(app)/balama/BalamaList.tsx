@@ -2,6 +2,7 @@
 
 import { useDeferredValue, useMemo, useState, useSyncExternalStore } from "react";
 import { ChevronDownIcon, SearchIcon } from "@/components/Icons";
+import { AiExplainButton } from "@/components/MarjanUstaz";
 import { EmptyState } from "@/components/ui";
 import { useBalama } from "@/lib/balama";
 import { normalize } from "@/lib/proverbs";
@@ -74,6 +75,9 @@ export function BalamaList() {
                       <ChevronDownIcon className="shrink-0 text-muted transition-transform duration-200 group-open:rotate-180" />
                     </summary>
                     <p className="border-t border-line px-5 py-4">{w.definition}</p>
+                    <div className="px-5 pb-5">
+                      <AiExplainButton kind="balama" id={w.id} />
+                    </div>
                   </details>
                 </li>
               ))}

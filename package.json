@@ -9,13 +9,17 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@google/genai": "^2.30.0",
     "@opentelemetry/api": "^1.10.0",
     "@phosphor-icons/react": "^2.1.10",
+    "@upstash/ratelimit": "^2.2.0",
+    "@upstash/redis": "^1.39.0",
     "firebase": "^13.0.0",
     "firebase-admin": "^14.5.0",
     "next": "16.4.2",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
