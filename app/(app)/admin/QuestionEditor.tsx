@@ -22,6 +22,46 @@ import type { BalamaWord, LessonQuestion, Proverb, Topic } from "@/lib/types";
 import { LibraryPicker } from "./LibraryPicker";
 import { dangerBtn, NumberField, smallBtn, TextField } from "./shared";
 
+/** Подсказка-пример для каждого типа: как заполнить и что увидит ученик. */
+const EXAMPLES: Record<LessonQuestion["type"], { how: string; student: string }> = {
+  ending: {
+    how: "«Мақал (толық)» өрісіне мақалды бөлмей жазыңыз → «Соңы» батырмасын басыңыз → қате нұсқалар кітапханадан өзі толады.",
+    student: "Өнер алды — …   [қызыл тіл]  [ақыл]  [еңбек]",
+  },
+  meaning: {
+    how: "«Мақал / мәтін» өрісіне мақалды жазыңыз, нұсқаларға мағыналарды жазып, дұрысын белгілеңіз.",
+    student: "«Өнер алды — қызыл тіл»   [Сөз — өнердің ең биігі]  [Еңбек адамды асырайды]",
+  },
+  blank: {
+    how: "Мақалды толық жазыңыз → жасыратын сөзді басыңыз (немесе «Ең ұзын сөз») → қате нұсқалар өзі толады.",
+    student: "Өнер алды — _____ тіл   [қызыл]  [ұзын]  [ащы]",
+  },
+  write: {
+    how: "Мақалды толық жазыңыз → «Соңы» батырмасын басыңыз. «Дұрыс жауап» өрісі өзі толады — «|» қою міндетті емес.",
+    student: "Өнер алды — …   (оқушы өзі жазады: қызыл тіл)",
+  },
+  match: {
+    how: "Әр жолдың сол жағына мақал, оң жағына оның мағынасы. Кемінде 2 жұп керек.",
+    student: "Мақалдар мен мағыналар араласып беріледі, оқушы әрқайсысына мағынасын таңдайды.",
+  },
+  order: {
+    how: "Мақалды дұрыс ретпен жазыңыз — сөздерді оқушыға сайт өзі араластырады.",
+    student: "[тіл]  [Өнер]  [қызыл]  [алды]  →  Өнер алды қызыл тіл",
+  },
+  single: {
+    how: "Сұрақты жазыңыз, нұсқаларды толтырып, бір дұрысын белгілеңіз.",
+    student: "«Өнер алды — қызыл тіл» не туралы?   [Сөз өнері]  [Еңбек]  [Отан]",
+  },
+  multiple: {
+    how: "Сұрақты жазыңыз, дұрыс нұсқалардың бәрін белгілеңіз.",
+    student: "Сөз туралы мақалдарды таңдаңыз:   [Өнер алды — қызыл тіл]  [Тіл — тас жарады]  [Еңбек — ер азығы]",
+  },
+  truefalse: {
+    how: "Тұжырымды жазып, «Дұрыс» не «Бұрыс» нұсқасын белгілеңіз.",
+    student: "«Өнер алды — қызыл тіл» — еңбек туралы мақал.   [Дұрыс]  [Бұрыс]",
+  },
+};
+
 /** loading — мақалы ещё догружаются (список пока пустой). */
 export type Libraries = { proverbs: IndexedProverb[]; balama: BalamaWord[]; topics: Topic[]; loading?: boolean };
 
@@ -96,6 +136,17 @@ export function QuestionEditor({
             <NumberField label="Балл" min={0} value={q.points} onChange={(v) => set("points", Math.max(0, v))} />
           </div>
 
+          <div className="rounded-xl border border-line bg-card p-3 text-sm">
+            <p>
+              <span className="font-semibold">Қалай толтыру: </span>
+              {EXAMPLES[q.type].how}
+            </p>
+            <p className="mt-1.5">
+              <span className="font-semibold">Оқушы көреді: </span>
+              <span className="font-serif text-proverb italic">{EXAMPLES[q.type].student}</span>
+            </p>
+          </div>
+
           <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-gold/60 p-3">
             <button type="button" className="btn-primary min-h-9 px-4 py-1 text-sm" onClick={() => setPicking(true)}>
               📖 Кітапханадан толтыру
@@ -111,10 +162,19 @@ export function QuestionEditor({
 
           {!usePart && info.shape !== "order" && info.shape !== "match" && (
             <TextField
-              label={q.type === "blank" ? "Мәтін (бос орынды _____ деп белгілеңіз)" : "Мақал / мәтін"}
+              label={q.type === "blank" ? "Мәтін (бос орынды _____ деп белгілеңіз)" : q.type === "truefalse" ? "Тұжырым" : "Мақал / мәтін"}
               value={q.text}
               onChange={(v) => set("text", v)}
               multiline
+              placeholder={
+                q.type === "blank"
+                  ? "Мысалы: Өнер алды — _____ тіл"
+                  : q.type === "truefalse"
+                    ? "Мысалы: «Өнер алды — қызыл тіл» — еңбек туралы мақал."
+                    : q.type === "meaning"
+                      ? "Мысалы: Өнер алды — қызыл тіл"
+                      : "Мысалы: «Өнер алды — қызыл тіл» мақалы не туралы?"
+              }
             />
           )}
 
@@ -122,16 +182,24 @@ export function QuestionEditor({
 
           {info.shape === "write" && (
             <TextField
-              label="Дұрыс жауап"
+              label={usePart ? "Дұрыс жауап (жасырылған бөліктен өзі толады)" : "Дұрыс жауап"}
               value={q.answer}
               onChange={(v) => set("answer", v)}
-              hint="Бірнеше дұрыс нұсқа болса, «|» арқылы жазыңыз. Бас әріп пен тыныс белгілері есепке алынбайды."
+              placeholder="Мысалы: қызыл тіл"
+              hint="«|» мақалдың ішіне емес, тек осы жолға және тек бірнеше дұрыс жауап болса қойылады. Мысалы: қызыл тіл|тіл — оқушы «қызыл тіл» де, «тіл» де жазса, дұрыс саналады. Бас әріп пен тыныс белгілері есепке алынбайды."
             />
           )}
 
           {info.shape === "order" && (
             <>
-              <TextField label="Дұрыс мақал (сөздер осы ретпен)" value={q.answer} onChange={(v) => set("answer", v)} multiline />
+              <TextField
+                label="Дұрыс мақал (сөздер осы ретпен)"
+                value={q.answer}
+                onChange={(v) => set("answer", v)}
+                multiline
+                placeholder="Мысалы: Өнер алды — қызыл тіл"
+                hint="Мақалды дұрыс ретпен жазыңыз. Сөздер оқушыға араласып көрсетіледі."
+              />
               <p className="flex flex-wrap gap-1 text-sm">
                 {orderWords(q).map((w, i) => (
                   <span key={i} className="rounded border border-line bg-card px-2 py-0.5">
@@ -139,7 +207,12 @@ export function QuestionEditor({
                   </span>
                 ))}
               </p>
-              <TextField label="Көмекші мәтін (міндетті емес)" value={q.text} onChange={(v) => set("text", v)} />
+              <TextField
+                label="Көмекші мәтін (міндетті емес)"
+                value={q.text}
+                onChange={(v) => set("text", v)}
+                placeholder="Мысалы: Сөз өнері туралы мақал"
+              />
             </>
           )}
 
@@ -201,7 +274,7 @@ function ChoiceEditor({ q, onChange }: { q: LessonQuestion; onChange: (q: Lesson
             value={o}
             readOnly={fixed}
             onChange={(e) => onChange({ ...q, options: q.options.map((x, j) => (j === i ? e.target.value : x)) })}
-            placeholder={`${i + 1}-нұсқа`}
+            placeholder={fixed ? undefined : i === 0 ? "Мысалы: қызыл тіл" : `${i + 1}-нұсқа`}
             aria-label={`${i + 1}-нұсқа`}
             className={`field ${q.correct.includes(i) ? "border-success" : ""}`}
           />
@@ -236,7 +309,7 @@ function MatchEditor({ q, onChange }: { q: LessonQuestion; onChange: (q: LessonQ
             value={p.left}
             onChange={(e) => setPair(i, "left", e.target.value)}
             rows={2}
-            placeholder="Мақал"
+            placeholder={i === 0 ? "Мысалы: Өнер алды — қызыл тіл" : "Мақал"}
             aria-label={`${i + 1}-жұп: мақал`}
             className="field resize-y"
           />
@@ -244,7 +317,7 @@ function MatchEditor({ q, onChange }: { q: LessonQuestion; onChange: (q: LessonQ
             value={p.right}
             onChange={(e) => setPair(i, "right", e.target.value)}
             rows={2}
-            placeholder="Мағынасы"
+            placeholder={i === 0 ? "Мысалы: Сөз — өнердің ең биігі" : "Мағынасы"}
             aria-label={`${i + 1}-жұп: мағынасы`}
             className="field resize-y"
           />
@@ -301,7 +374,7 @@ function PartEditor({ q, onChange, pool }: { q: LessonQuestion; onChange: (q: Le
         onChange={setFull}
         multiline
         placeholder="Мысалы: Өнер алды — қызыл тіл"
-        hint="Мақалды толық жазыңыз, содан кейін қай бөлігін жасыратынын таңдаңыз."
+        hint="Мақалды бөлмей, толық жазыңыз — «|» мұнда керек емес. Содан кейін төменде «Басы / Ортасы / Соңы» батырмасын басыңыз немесе жасыратын сөздерді басыңыз."
       />
       {words.length > 0 && (
         <>
